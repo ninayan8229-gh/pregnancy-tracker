@@ -1,0 +1,2391 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>孕育时光 - 孕期管理助手</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&display=swap');
+
+  :root {
+    --pink-light: #FFF0F3;
+    --pink-100: #FFE4EA;
+    --pink-200: #FFC8D6;
+    --pink-300: #FFA8BD;
+    --pink-400: #FF85A3;
+    --pink-500: #FF6B8A;
+    --pink-600: #E8506F;
+    --cream: #FFF8F0;
+    --cream-dark: #F5EDE3;
+    --lavender: #F0E6FF;
+    --lavender-light: #F8F0FF;
+    --mint: #E8F8F0;
+    --peach: #FFE8D6;
+    --text-primary: #4A3F55;
+    --text-secondary: #7A6F85;
+    --text-light: #A99BB5;
+    --white: #FFFFFF;
+    --shadow-sm: 0 2px 8px rgba(255, 107, 138, 0.08);
+    --shadow-md: 0 4px 16px rgba(255, 107, 138, 0.12);
+    --shadow-lg: 0 8px 32px rgba(255, 107, 138, 0.15);
+    --radius-sm: 12px;
+    --radius-md: 16px;
+    --radius-lg: 24px;
+    --radius-xl: 32px;
+  }
+
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  body {
+    font-family: 'Noto Sans SC', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: var(--pink-light);
+    color: var(--text-primary);
+    min-height: 100vh;
+    line-height: 1.6;
+  }
+
+  /* ===== Setup Screen ===== */
+  .setup-screen {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    background: linear-gradient(135deg, var(--pink-light) 0%, var(--lavender-light) 50%, var(--cream) 100%);
+  }
+
+  .setup-card {
+    background: var(--white);
+    border-radius: var(--radius-xl);
+    padding: 48px 40px;
+    max-width: 480px;
+    width: 100%;
+    box-shadow: var(--shadow-lg);
+    text-align: center;
+    animation: fadeInUp 0.6s ease;
+  }
+
+  .setup-card .logo {
+    font-size: 48px;
+    margin-bottom: 8px;
+  }
+
+  .setup-card h1 {
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 8px;
+  }
+
+  .setup-card .subtitle {
+    font-size: 14px;
+    color: var(--text-light);
+    margin-bottom: 32px;
+  }
+
+  .form-group {
+    text-align: left;
+    margin-bottom: 24px;
+  }
+
+  .form-group label {
+    display: block;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    margin-bottom: 8px;
+  }
+
+  .form-group input[type="date"] {
+    width: 100%;
+    padding: 14px 16px;
+    border: 2px solid var(--pink-100);
+    border-radius: var(--radius-sm);
+    font-size: 16px;
+    font-family: inherit;
+    color: var(--text-primary);
+    background: var(--pink-light);
+    outline: none;
+    transition: all 0.3s;
+  }
+
+  .form-group input[type="date"]:focus {
+    border-color: var(--pink-400);
+    background: var(--white);
+    box-shadow: 0 0 0 4px rgba(255, 107, 138, 0.1);
+  }
+
+  .tab-group {
+    display: flex;
+    background: var(--pink-light);
+    border-radius: var(--radius-sm);
+    padding: 4px;
+    margin-bottom: 24px;
+  }
+
+  .tab-btn {
+    flex: 1;
+    padding: 12px;
+    border: none;
+    background: transparent;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.3s;
+    font-family: inherit;
+  }
+
+  .tab-btn.active {
+    background: var(--white);
+    color: var(--pink-500);
+    box-shadow: var(--shadow-sm);
+  }
+
+  .start-btn {
+    width: 100%;
+    padding: 16px;
+    border: none;
+    background: linear-gradient(135deg, var(--pink-400) 0%, var(--pink-500) 100%);
+    color: var(--white);
+    border-radius: var(--radius-sm);
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.3s;
+    box-shadow: 0 4px 16px rgba(255, 107, 138, 0.3);
+  }
+
+  .start-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 24px rgba(255, 107, 138, 0.4);
+  }
+
+  /* ===== Main App ===== */
+  .app {
+    display: none;
+    max-width: 480px;
+    margin: 0 auto;
+    padding-bottom: 100px;
+  }
+
+  .app.active { display: block; }
+
+  /* Header */
+  .app-header {
+    background: linear-gradient(135deg, var(--pink-400) 0%, var(--pink-500) 50%, #E8506F 100%);
+    padding: 20px 24px 60px;
+    color: var(--white);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .app-header::before {
+    content: '';
+    position: absolute;
+    top: -20px;
+    right: -20px;
+    width: 120px;
+    height: 120px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 50%;
+  }
+
+  .app-header::after {
+    content: '';
+    position: absolute;
+    bottom: -30px;
+    left: -10px;
+    width: 80px;
+    height: 80px;
+    background: rgba(255,255,255,0.08);
+    border-radius: 50%;
+  }
+
+  .header-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .header-top h1 {
+    font-size: 20px;
+    font-weight: 700;
+  }
+
+  .header-top .edit-btn {
+    background: rgba(255,255,255,0.2);
+    border: none;
+    color: var(--white);
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 12px;
+    cursor: pointer;
+    font-family: inherit;
+    transition: background 0.3s;
+  }
+
+  .header-top .edit-btn:hover {
+    background: rgba(255,255,255,0.3);
+  }
+
+  .week-display {
+    position: relative;
+    z-index: 1;
+  }
+
+  .week-display .week-num {
+    font-size: 48px;
+    font-weight: 700;
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+
+  .week-display .week-label {
+    font-size: 14px;
+    opacity: 0.9;
+  }
+
+  .week-display .trimester-tag {
+    display: inline-block;
+    background: rgba(255,255,255,0.25);
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 12px;
+    margin-top: 8px;
+  }
+
+  /* Progress Card */
+  .progress-card {
+    background: var(--white);
+    border-radius: var(--radius-lg);
+    padding: 24px;
+    margin: -40px 16px 16px;
+    box-shadow: var(--shadow-md);
+    position: relative;
+    z-index: 2;
+  }
+
+  .progress-bar-wrap {
+    margin-bottom: 16px;
+  }
+
+  .progress-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+  }
+
+  .progress-info .label {
+    font-size: 13px;
+    color: var(--text-secondary);
+  }
+
+  .progress-info .percent {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--pink-500);
+  }
+
+  .progress-bar {
+    height: 10px;
+    background: var(--pink-100);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--pink-300), var(--pink-500));
+    border-radius: 10px;
+    transition: width 0.8s ease;
+  }
+
+  .baby-size {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px;
+    background: var(--cream);
+    border-radius: var(--radius-sm);
+  }
+
+  .baby-size .emoji {
+    font-size: 36px;
+    line-height: 1;
+  }
+
+  .baby-size .info h3 {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 2px;
+  }
+
+  .baby-size .info p {
+    font-size: 13px;
+    color: var(--text-secondary);
+  }
+
+  .days-countdown {
+    margin-top: 14px;
+    text-align: center;
+    padding: 10px;
+    background: var(--lavender-light);
+    border-radius: var(--radius-sm);
+  }
+
+  .days-countdown .num {
+    font-size: 28px;
+    font-weight: 700;
+    color: #9B7FCC;
+  }
+
+  .days-countdown .txt {
+    font-size: 12px;
+    color: #A99BB5;
+  }
+
+  /* Section */
+  .section {
+    margin: 16px;
+    background: var(--white);
+    border-radius: var(--radius-lg);
+    padding: 20px;
+    box-shadow: var(--shadow-sm);
+  }
+
+  .section-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .section-title .icon {
+    font-size: 20px;
+  }
+
+  /* Fetal Development */
+  .dev-card {
+    display: flex;
+    gap: 14px;
+    padding: 14px;
+    background: var(--pink-light);
+    border-radius: var(--radius-md);
+    margin-bottom: 12px;
+    border-left: 4px solid var(--pink-300);
+  }
+
+  .dev-card .dev-emoji {
+    font-size: 32px;
+    flex-shrink: 0;
+    width: 48px;
+    text-align: center;
+  }
+
+  .dev-card .dev-content h4 {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 4px;
+  }
+
+  .dev-card .dev-content p {
+    font-size: 13px;
+    color: var(--text-secondary);
+    line-height: 1.7;
+  }
+
+  .dev-card:last-child { margin-bottom: 0; }
+
+  /* Timeline Navigation */
+  .timeline-nav {
+    display: flex;
+    gap: 8px;
+    margin: 0 16px 16px;
+    overflow-x: auto;
+    padding: 4px 0;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .timeline-nav::-webkit-scrollbar { display: none; }
+
+  .timeline-btn {
+    flex-shrink: 0;
+    padding: 8px 14px;
+    border: 2px solid var(--pink-100);
+    background: var(--white);
+    border-radius: 20px;
+    font-size: 12px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.3s;
+    white-space: nowrap;
+  }
+
+  .timeline-btn.active {
+    background: var(--pink-500);
+    border-color: var(--pink-500);
+    color: var(--white);
+  }
+
+  .timeline-btn:hover:not(.active) {
+    border-color: var(--pink-300);
+    color: var(--pink-500);
+  }
+
+  /* Checklist */
+  .checklist-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--pink-100);
+  }
+
+  .checklist-item:last-child { border-bottom: none; }
+
+  .checklist-item input[type="checkbox"] {
+    appearance: none;
+    width: 22px;
+    height: 22px;
+    border: 2px solid var(--pink-200);
+    border-radius: 50%;
+    flex-shrink: 0;
+    cursor: pointer;
+    transition: all 0.3s;
+    margin-top: 1px;
+  }
+
+  .checklist-item input[type="checkbox"]:checked {
+    background: var(--pink-400);
+    border-color: var(--pink-400);
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 16 16' fill='white' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M12.207 4.793a1 1 0 010 1.414l-5 5a1 1 0 01-1.414 0l-2-2a1 1 0 011.414-1.414L6.5 9.086l4.293-4.293a1 1 0 011.414 0z'/%3E%3C/svg%3E");
+    background-size: 14px;
+    background-repeat: no-repeat;
+    background-position: center;
+  }
+
+  .checklist-item .check-content h4 {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 2px;
+  }
+
+  .checklist-item .check-content.checked h4 {
+    text-decoration: line-through;
+    color: var(--text-light);
+  }
+
+  .checklist-item .check-content p {
+    font-size: 12px;
+    color: var(--text-light);
+  }
+
+  .checklist-item .check-content.checked p {
+    color: var(--pink-200);
+  }
+
+  .checklist-item .check-tag {
+    flex-shrink: 0;
+    padding: 2px 10px;
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: 500;
+    margin-top: 2px;
+  }
+
+  .tag-important {
+    background: #FFE4E4;
+    color: #E85050;
+  }
+
+  .tag-normal {
+    background: var(--pink-100);
+    color: var(--pink-500);
+  }
+
+  .tag-optional {
+    background: var(--mint);
+    color: #4CAF7D;
+  }
+
+  /* Tips */
+  .tip-card {
+    padding: 14px;
+    border-radius: var(--radius-sm);
+    margin-bottom: 10px;
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+  }
+
+  .tip-card:last-child { margin-bottom: 0; }
+
+  .tip-card .tip-icon {
+    font-size: 22px;
+    flex-shrink: 0;
+  }
+
+  .tip-card .tip-text {
+    font-size: 13px;
+    color: var(--text-secondary);
+    line-height: 1.7;
+  }
+
+  .tip-card .tip-text strong {
+    color: var(--text-primary);
+  }
+
+  .tip-nutrition {
+    background: var(--cream);
+    border-left: 3px solid #FFB347;
+  }
+
+  .tip-exercise {
+    background: var(--mint);
+    border-left: 3px solid #4CAF7D;
+  }
+
+  .tip-care {
+    background: var(--lavender-light);
+    border-left: 3px solid #9B7FCC;
+  }
+
+  .tip-warning {
+    background: #FFF5F5;
+    border-left: 3px solid #FF6B6B;
+  }
+
+  /* Warning Banner */
+  .warning-banner {
+    margin: 16px;
+    padding: 14px 16px;
+    background: linear-gradient(135deg, #FFF5F5, #FFE8E8);
+    border-radius: var(--radius-sm);
+    border: 1px solid #FFC8C8;
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+  }
+
+  .warning-banner .warn-icon { font-size: 20px; }
+  .warning-banner .warn-text {
+    font-size: 12px;
+    color: #C05050;
+    line-height: 1.6;
+  }
+
+  /* Weight Tracker */
+  .weight-input-row {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+
+  .weight-input-row input {
+    flex: 1;
+    padding: 10px 14px;
+    border: 2px solid var(--pink-100);
+    border-radius: var(--radius-sm);
+    font-size: 14px;
+    font-family: inherit;
+    outline: none;
+    transition: border-color 0.3s;
+  }
+
+  .weight-input-row input:focus {
+    border-color: var(--pink-300);
+  }
+
+  .weight-input-row button {
+    padding: 10px 18px;
+    background: var(--pink-400);
+    color: var(--white);
+    border: none;
+    border-radius: var(--radius-sm);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+    white-space: nowrap;
+    transition: background 0.3s;
+  }
+
+  .weight-input-row button:hover { background: var(--pink-500); }
+
+  .weight-log {
+    max-height: 200px;
+    overflow-y: auto;
+  }
+
+  .weight-entry {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+    font-size: 13px;
+    border-bottom: 1px solid var(--pink-100);
+  }
+
+  .weight-entry:last-child { border-bottom: none; }
+  .weight-entry .date { color: var(--text-light); }
+  .weight-entry .val { font-weight: 600; color: var(--text-primary); }
+  .weight-entry .gain { font-size: 12px; color: var(--text-light); }
+
+  /* Bottom Nav */
+  .bottom-nav {
+    position: fixed;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100%;
+    max-width: 480px;
+    background: var(--white);
+    border-top: 1px solid var(--pink-100);
+    display: flex;
+    padding: 8px 0;
+    padding-bottom: env(safe-area-inset-bottom, 8px);
+    z-index: 100;
+  }
+
+  .nav-item {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    padding: 6px 0;
+    cursor: pointer;
+    transition: all 0.3s;
+    background: none;
+    border: none;
+    font-family: inherit;
+  }
+
+  .nav-item .nav-icon {
+    font-size: 22px;
+  }
+
+  .nav-item .nav-label {
+    font-size: 11px;
+    color: var(--text-light);
+  }
+
+  .nav-item.active .nav-label {
+    color: var(--pink-500);
+    font-weight: 600;
+  }
+
+  /* Page views */
+  .page-view { display: none; }
+  .page-view.active { display: block; }
+
+  /* Animation */
+  @keyframes fadeInUp {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .animate-in {
+    animation: fadeInUp 0.4s ease;
+  }
+
+  /* Modal */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(74, 63, 85, 0.4);
+    z-index: 200;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+
+  .modal-overlay.active { display: flex; }
+
+  .modal {
+    background: var(--white);
+    border-radius: var(--radius-lg);
+    padding: 32px 24px;
+    max-width: 400px;
+    width: 100%;
+    animation: fadeInUp 0.3s ease;
+  }
+
+  .modal h3 {
+    font-size: 18px;
+    font-weight: 700;
+    margin-bottom: 16px;
+    text-align: center;
+  }
+
+  .modal .modal-btns {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+  }
+
+  .modal .modal-btns button {
+    flex: 1;
+    padding: 12px;
+    border-radius: var(--radius-sm);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.3s;
+  }
+
+  .modal .btn-cancel {
+    background: var(--pink-100);
+    border: none;
+    color: var(--text-secondary);
+  }
+
+  .modal .btn-confirm {
+    background: var(--pink-500);
+    border: none;
+    color: var(--white);
+  }
+
+  /* Recipe Cards */
+  .recipe-card {
+    padding: 16px;
+    border-radius: var(--radius-md);
+    margin-bottom: 12px;
+    background: var(--white);
+    border: 1px solid var(--pink-100);
+    transition: all 0.3s;
+    cursor: default;
+  }
+
+  .recipe-card:hover {
+    box-shadow: var(--shadow-sm);
+    border-color: var(--pink-200);
+  }
+
+  .recipe-card:last-child { margin-bottom: 0; }
+
+  .recipe-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 10px;
+  }
+
+  .recipe-header .meal-tag {
+    font-size: 11px;
+    font-weight: 600;
+    padding: 3px 10px;
+    border-radius: 10px;
+    flex-shrink: 0;
+  }
+
+  .meal-breakfast { background: var(--cream); color: #D4883E; }
+  .meal-lunch { background: var(--mint); color: #3D9E6A; }
+  .meal-dinner { background: var(--lavender-light); color: #8B6CB0; }
+  .meal-snack { background: var(--peach); color: #CC7A4A; }
+
+  .recipe-name {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 6px;
+  }
+
+  .recipe-desc {
+    font-size: 13px;
+    color: var(--text-secondary);
+    line-height: 1.7;
+    margin-bottom: 10px;
+  }
+
+  .recipe-ingredients {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .recipe-ingredients .ingredient {
+    font-size: 11px;
+    padding: 3px 10px;
+    background: var(--pink-light);
+    color: var(--pink-600);
+    border-radius: 12px;
+  }
+
+  .recipe-nutrition-bar {
+    display: flex;
+    gap: 16px;
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid var(--pink-100);
+  }
+
+  .recipe-nutrition-bar .nut-item {
+    font-size: 11px;
+    color: var(--text-light);
+  }
+
+  .recipe-nutrition-bar .nut-item span {
+    color: var(--text-secondary);
+    font-weight: 600;
+  }
+
+  .recipe-section-label {
+    font-size: 13px;
+    color: var(--text-light);
+    margin-bottom: 12px;
+    text-align: center;
+  }
+
+  .recipe-date-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 14px;
+    background: linear-gradient(135deg, var(--cream) 0%, var(--peach) 100%);
+    border-radius: 20px;
+    font-size: 12px;
+    color: #B07A4A;
+    font-weight: 500;
+  }
+
+  .recipe-refresh-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+  }
+
+  .recipe-refresh-btn {
+    background: none;
+    border: 2px solid var(--pink-200);
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 12px;
+    color: var(--pink-500);
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.3s;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .recipe-refresh-btn:hover {
+    background: var(--pink-light);
+    border-color: var(--pink-400);
+  }
+
+  .recipe-week-tip {
+    margin-top: 16px;
+    padding: 14px;
+    background: var(--cream);
+    border-radius: var(--radius-sm);
+    border-left: 3px solid #FFB347;
+  }
+
+  .recipe-week-tip h4 {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 6px;
+  }
+
+  .recipe-week-tip p {
+    font-size: 12px;
+    color: var(--text-secondary);
+    line-height: 1.7;
+  }
+
+  /* Sync UI */
+  .sync-card {
+    margin-top: 20px;
+    padding: 16px;
+    border-radius: var(--radius-md);
+    background: var(--lavender-light);
+    border: 1px dashed var(--lavender);
+    text-align: center;
+  }
+
+  .sync-card.sync-active {
+    background: var(--mint);
+    border: 1px solid #B8E8D0;
+  }
+
+  .sync-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 4px;
+  }
+
+  .sync-room-info {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    margin: 8px 0;
+  }
+
+  .sync-code {
+    font-size: 24px;
+    font-weight: 800;
+    letter-spacing: 4px;
+    color: var(--pink-600);
+    cursor: pointer;
+    font-family: monospace;
+  }
+
+  .sync-btn {
+    border: none;
+    padding: 8px 16px;
+    border-radius: 16px;
+    font-size: 13px;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.2s;
+  }
+
+  .sync-create-btn {
+    background: var(--pink-500);
+    color: #fff;
+  }
+  .sync-create-btn:hover { background: var(--pink-600); }
+
+  .sync-join-btn {
+    background: var(--white);
+    color: var(--text-primary);
+    border: 1px solid var(--pink-200);
+  }
+  .sync-join-btn:hover { background: var(--pink-light); }
+
+  .sync-copy-btn {
+    background: var(--pink-400);
+    color: #fff;
+    font-size: 12px;
+    padding: 6px 12px;
+  }
+  .sync-copy-btn:hover { background: var(--pink-500); }
+
+  .sync-leave-btn {
+    background: none;
+    color: var(--text-light);
+    font-size: 12px;
+    text-decoration: underline;
+    padding: 4px 8px;
+    margin-top: 4px;
+  }
+  .sync-leave-btn:hover { color: var(--pink-600); }
+
+  #syncBadge {
+    font-size: 11px;
+    margin-left: auto;
+  }
+
+  #syncBadge .sync-on {
+    color: #3D9E6A;
+    cursor: pointer;
+  }
+
+  #syncBadge .sync-off {
+    color: var(--text-light);
+  }
+
+  #syncBadge .sync-wait {
+    color: #E8A830;
+  }
+
+  /* Responsive */
+  @media (max-width: 480px) {
+    .setup-card { padding: 32px 24px; }
+    .progress-card { margin: -40px 12px 12px; }
+    .section { margin: 12px; }
+    .timeline-nav { margin: 0 12px 12px; }
+    .warning-banner { margin: 12px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Setup Screen -->
+<div class="setup-screen" id="setupScreen">
+  <div class="setup-card">
+    <div class="logo">🤰</div>
+    <h1>孕育时光</h1>
+    <p class="subtitle">记录每一个珍贵的成长瞬间</p>
+
+    <div class="form-group">
+      <label>选择日期类型</label>
+      <div class="tab-group">
+        <button class="tab-btn active" onclick="setDateType('lmp')">末次月经</button>
+        <button class="tab-btn" onclick="setDateType('edd')">预产期</button>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label id="dateLabel">末次月经第一天</label>
+      <input type="date" id="dateInput">
+    </div>
+
+    <button class="start-btn" onclick="startApp()">开始记录 ✨</button>
+
+    <div id="syncSection"></div>
+  </div>
+</div>
+
+<!-- Main App -->
+<div class="app" id="mainApp">
+  <!-- Header -->
+  <div class="app-header">
+    <div class="header-top">
+      <h1>🤰 孕育时光</h1>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <div id="syncBadge"></div>
+        <button class="edit-btn" onclick="showEditModal()">修改日期</button>
+      </div>
+    </div>
+    <div class="week-display">
+      <div class="week-num" id="weekNum">--</div>
+      <div class="week-label" id="weekLabel">计算中...</div>
+      <span class="trimester-tag" id="trimesterTag"></span>
+    </div>
+  </div>
+
+  <!-- Progress Card -->
+  <div class="progress-card animate-in">
+    <div class="progress-bar-wrap">
+      <div class="progress-info">
+        <span class="label">孕期进度</span>
+        <span class="percent" id="progressPercent">0%</span>
+      </div>
+      <div class="progress-bar">
+        <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+      </div>
+    </div>
+    <div class="baby-size" id="babySize">
+      <span class="emoji" id="babyEmoji">🌱</span>
+      <div class="info">
+        <h3 id="babySizeText">加载中...</h3>
+        <p id="babySizeDesc"></p>
+      </div>
+    </div>
+    <div class="days-countdown">
+      <div class="num" id="daysLeft">--</div>
+      <div class="txt">距离预产期还有</div>
+    </div>
+  </div>
+
+  <!-- Page: Home -->
+  <div class="page-view active" id="pageHome">
+    <!-- Current Week Development -->
+    <div class="section animate-in">
+      <div class="section-title"><span class="icon">👶</span> 宝宝本周发育</div>
+      <div id="devContent"></div>
+    </div>
+
+    <!-- Warning Banner -->
+    <div class="warning-banner" id="warningBanner" style="display:none">
+      <span class="warn-icon">⚠️</span>
+      <div class="warn-text" id="warningText"></div>
+    </div>
+
+    <!-- Tips -->
+    <div class="section animate-in">
+      <div class="section-title"><span class="icon">💡</span> 本周温馨提示</div>
+      <div id="tipsContent"></div>
+    </div>
+  </div>
+
+  <!-- Page: Checkup -->
+  <div class="page-view" id="pageCheckup">
+    <div class="section animate-in">
+      <div class="section-title"><span class="icon">🏥</span> 产检清单</div>
+      <div id="checkupContent"></div>
+    </div>
+  </div>
+
+  <!-- Page: Timeline -->
+  <div class="page-view" id="pageTimeline">
+    <div class="timeline-nav" id="timelineNav"></div>
+    <div class="section animate-in">
+      <div class="section-title"><span class="icon">📖</span> <span id="timelineTitle">第1周</span></div>
+      <div id="timelineContent"></div>
+    </div>
+  </div>
+
+  <!-- Page: Recipe -->
+  <div class="page-view" id="pageRecipe">
+    <div class="section animate-in">
+      <div class="section-title"><span class="icon">🍲</span> 每日菜谱推荐</div>
+      <div class="recipe-refresh-row">
+        <div class="recipe-date-badge" id="recipeDateBadge">📅 今日推荐</div>
+        <button class="recipe-refresh-btn" onclick="refreshRecipes()">换一批 🔄</button>
+      </div>
+      <div class="recipe-section-label" id="recipeWeekHint">根据你的孕周精选推荐</div>
+      <div id="recipeContent"></div>
+    </div>
+  </div>
+
+  <!-- Page: Weight -->
+  <div class="page-view" id="pageWeight">
+    <div class="section animate-in">
+      <div class="section-title"><span class="icon">⚖️</span> 体重记录</div>
+      <div class="weight-input-row">
+        <input type="number" id="weightInput" placeholder="输入体重 (kg)" step="0.1">
+        <button onclick="addWeight()">记录</button>
+      </div>
+      <div class="weight-log" id="weightLog"></div>
+    </div>
+  </div>
+
+  <!-- Bottom Navigation -->
+  <div class="bottom-nav">
+    <button class="nav-item active" onclick="switchPage('Home', this)">
+      <span class="nav-icon">🏠</span>
+      <span class="nav-label">首页</span>
+    </button>
+    <button class="nav-item" onclick="switchPage('Checkup', this)">
+      <span class="nav-icon">🏥</span>
+      <span class="nav-label">产检</span>
+    </button>
+    <button class="nav-item" onclick="switchPage('Recipe', this)">
+      <span class="nav-icon">🍲</span>
+      <span class="nav-label">菜谱</span>
+    </button>
+    <button class="nav-item" onclick="switchPage('Timeline', this)">
+      <span class="nav-icon">📅</span>
+      <span class="nav-label">时间轴</span>
+    </button>
+    <button class="nav-item" onclick="switchPage('Weight', this)">
+      <span class="nav-icon">⚖️</span>
+      <span class="nav-label">体重</span>
+    </button>
+  </div>
+</div>
+
+<!-- Edit Modal -->
+<div class="modal-overlay" id="editModal">
+  <div class="modal">
+    <h3>修改记录日期</h3>
+    <div class="form-group">
+      <label>末次月经第一天</label>
+      <input type="date" id="editDateInput">
+    </div>
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="hideEditModal()">取消</button>
+      <button class="btn-confirm" onclick="confirmEdit()">确认</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<script>
+// Firebase Config - 替换为你自己的配置
+const firebaseConfig = {
+  apiKey: "YOUR_API_KEY",
+  authDomain: "YOUR_PROJECT.firebaseapp.com",
+  databaseURL: "https://YOUR_PROJECT-default-rtdb.firebaseio.com",
+  projectId: "YOUR_PROJECT",
+  storageBucket: "YOUR_PROJECT.appspot.com",
+  messagingSenderId: "YOUR_SENDER_ID",
+  appId: "YOUR_APP_ID"
+};
+
+// Firebase state
+let firebaseApp = null;
+let firebaseDb = null;
+let roomCode = localStorage.getItem('pregnancy_room') || null;
+let syncListener = null;
+let isOnline = false;
+
+function initFirebase() {
+  try {
+    firebaseApp = firebase.initializeApp(firebaseConfig);
+    firebaseDb = firebase.database();
+    firebaseDb.ref('.info/connected').on('value', (snap) => {
+      isOnline = snap.val() === true;
+      updateSyncUI();
+    });
+  } catch (e) {
+    console.warn('Firebase init failed:', e);
+  }
+}
+
+function generateRoomCode() {
+  const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
+  let code = '';
+  for (let i = 0; i < 6; i++) {
+    code += chars[Math.floor(Math.random() * chars.length)];
+  }
+  return code;
+}
+
+async function createRoom() {
+  if (!firebaseDb) {
+    alert('Firebase 未配置，请先完成 Firebase 设置');
+    return;
+  }
+  roomCode = generateRoomCode();
+  localStorage.setItem('pregnancy_room', roomCode);
+  await saveToFirebase();
+  startListening();
+  updateSyncUI();
+  showSyncToast('家庭房间已创建！');
+}
+
+async function joinRoom(code) {
+  if (!firebaseDb) {
+    alert('Firebase 未配置，请先完成 Firebase 设置');
+    return;
+  }
+  const cleanCode = code.trim().toLowerCase();
+  if (cleanCode.length !== 6) {
+    alert('房间码应为6位字符');
+    return;
+  }
+  roomCode = cleanCode;
+  localStorage.setItem('pregnancy_room', roomCode);
+
+  try {
+    const snap = await firebaseDb.ref('rooms/' + roomCode + '/data').once('value');
+    if (snap.exists()) {
+      const data = snap.val();
+      if (data.lmpDate) {
+        lmpDate = new Date(data.lmpDate);
+        eddDate = data.eddDate ? new Date(data.eddDate) : getEDD(lmpDate);
+        localStorage.setItem('pregnancy_lmp', lmpDate.toISOString());
+        localStorage.setItem('pregnancy_edd', eddDate.toISOString());
+      }
+      if (data.weightRecords) {
+        weightRecords = data.weightRecords;
+        localStorage.setItem('pregnancy_weights', JSON.stringify(weightRecords));
+      }
+      if (data.checkedItems) {
+        checkedItems = data.checkedItems;
+        localStorage.setItem('pregnancy_checks', JSON.stringify(checkedItems));
+      }
+      document.getElementById('setupScreen').style.display = 'none';
+      document.getElementById('mainApp').classList.add('active');
+      updateUI();
+      startListening();
+      showSyncToast('已加入家庭房间！');
+    } else {
+      startListening();
+      showSyncToast('已加入，等待数据同步...');
+    }
+    updateSyncUI();
+  } catch (e) {
+    alert('加入房间失败：' + e.message);
+  }
+}
+
+function startListening() {
+  if (!firebaseDb || !roomCode) return;
+  if (syncListener) {
+    firebaseDb.ref('rooms/' + roomCode + '/data').off('value', syncListener);
+  }
+  syncListener = firebaseDb.ref('rooms/' + roomCode + '/data').on('value', (snap) => {
+    if (!snap.exists()) return;
+    const data = snap.val();
+
+    if (data.lmpDate) {
+      const newLmp = new Date(data.lmpDate);
+      if (!lmpDate || newLmp.getTime() !== lmpDate.getTime()) {
+        lmpDate = newLmp;
+        eddDate = data.eddDate ? new Date(data.eddDate) : getEDD(lmpDate);
+        localStorage.setItem('pregnancy_lmp', lmpDate.toISOString());
+        localStorage.setItem('pregnancy_edd', eddDate.toISOString());
+      }
+    }
+
+    if (data.weightRecords && JSON.stringify(data.weightRecords) !== JSON.stringify(weightRecords)) {
+      weightRecords = data.weightRecords;
+      localStorage.setItem('pregnancy_weights', JSON.stringify(weightRecords));
+    }
+
+    if (data.checkedItems && JSON.stringify(data.checkedItems) !== JSON.stringify(checkedItems)) {
+      checkedItems = data.checkedItems;
+      localStorage.setItem('pregnancy_checks', JSON.stringify(checkedItems));
+    }
+
+    if (lmpDate && document.getElementById('mainApp').classList.contains('active')) {
+      updateUI();
+    }
+    showSyncToast('数据已同步');
+  });
+}
+
+async function saveToFirebase() {
+  if (!firebaseDb || !roomCode) return;
+  try {
+    await firebaseDb.ref('rooms/' + roomCode + '/data').update({
+      lmpDate: lmpDate ? lmpDate.toISOString() : null,
+      eddDate: eddDate ? eddDate.toISOString() : null,
+      weightRecords: weightRecords,
+      checkedItems: checkedItems,
+      lastUpdated: firebase.database.ServerValue.TIMESTAMP
+    });
+  } catch (e) {
+    console.warn('Firebase save failed:', e);
+  }
+}
+
+function leaveRoom() {
+  if (syncListener && firebaseDb && roomCode) {
+    firebaseDb.ref('rooms/' + roomCode + '/data').off('value', syncListener);
+    syncListener = null;
+  }
+  roomCode = null;
+  localStorage.removeItem('pregnancy_room');
+  updateSyncUI();
+  showSyncToast('已退出家庭房间');
+}
+
+function copyRoomCode() {
+  if (navigator.clipboard && roomCode) {
+    navigator.clipboard.writeText(roomCode).then(() => showSyncToast('房间码已复制！'));
+  } else if (roomCode) {
+    const ta = document.createElement('textarea');
+    ta.value = roomCode;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    showSyncToast('房间码已复制！');
+  }
+}
+
+function updateSyncUI() {
+  const badge = document.getElementById('syncBadge');
+  if (badge) {
+    if (!roomCode) {
+      badge.innerHTML = '<span class="sync-off">☁️ 未同步</span>';
+    } else if (isOnline) {
+      badge.innerHTML = '<span class="sync-on" onclick="copyRoomCode()" title="点击复制房间码">☁️ 已同步 · ' + roomCode + '</span>';
+    } else {
+      badge.innerHTML = '<span class="sync-wait">⏳ 连接中...</span>';
+    }
+  }
+  renderSyncSection();
+}
+
+function showSyncToast(msg) {
+  let toast = document.getElementById('syncToast');
+  if (!toast) {
+    toast = document.createElement('div');
+    toast.id = 'syncToast';
+    toast.style.cssText = 'position:fixed;top:20px;left:50%;transform:translateX(-50%);background:var(--text-primary);color:#fff;padding:8px 20px;border-radius:20px;font-size:13px;z-index:9999;transition:opacity 0.3s;pointer-events:none;';
+    document.body.appendChild(toast);
+  }
+  toast.textContent = msg;
+  toast.style.opacity = '1';
+  clearTimeout(toast._timer);
+  toast._timer = setTimeout(() => { toast.style.opacity = '0'; }, 2000);
+}
+
+function renderSyncSection() {
+  const container = document.getElementById('syncSection');
+  if (!container) return;
+  if (!firebaseDb) {
+    container.innerHTML = '<div class="sync-card"><div class="sync-title">☁️ 数据同步</div><p style="font-size:13px;color:var(--text-secondary);margin:8px 0;">配置 Firebase 后可与家人实时同步数据</p></div>';
+    return;
+  }
+  if (roomCode) {
+    container.innerHTML = '<div class="sync-card sync-active"><div class="sync-title">☁️ 家庭房间</div><div class="sync-room-info"><span class="sync-code" onclick="copyRoomCode()" title="点击复制">' + roomCode + '</span><button class="sync-btn sync-copy-btn" onclick="copyRoomCode()">复制房间码</button></div><p style="font-size:12px;color:var(--text-light);margin:6px 0;">把房间码发给老公，他打开同一链接输入即可同步</p><button class="sync-btn sync-leave-btn" onclick="leaveRoom()">退出房间</button></div>';
+  } else {
+    container.innerHTML = '<div class="sync-card"><div class="sync-title">☁️ 数据同步</div><p style="font-size:13px;color:var(--text-secondary);margin:8px 0;">创建家庭房间，与老公实时共享孕期数据</p><div style="display:flex;gap:8px;flex-wrap:wrap;"><button class="sync-btn sync-create-btn" onclick="createRoom()">创建家庭房间</button><button class="sync-btn sync-join-btn" onclick="showJoinDialog()">加入家庭房间</button></div></div>';
+  }
+}
+
+function showJoinDialog() {
+  const code = prompt('请输入6位房间码：');
+  if (code) joinRoom(code);
+}
+
+// Init Firebase
+initFirebase();
+</script>
+<script>
+// ========== Data ==========
+const WEEK_DATA = {
+  4: {
+    size: '罂粟籽', sizeDesc: '约 1mm', emoji: '🌱',
+    dev: '胚胎刚刚着床，由两层细胞组成，即将分化出各个器官和身体部位。此时用肉眼几乎看不到，但一切都在悄然开始。',
+    tips: [
+      { type: 'care', icon: '💊', text: '<strong>开始补充叶酸</strong>，每天 0.4mg，预防胎儿神经管畸形。' },
+      { type: 'warning', icon: '🚫', text: '<strong>避免接触有害物质</strong>，包括烟酒、辐射、化学药品等。' },
+      { type: 'care', icon: '😴', text: '保持充足睡眠，避免过度疲劳和剧烈运动。' },
+    ],
+    checkup: [{ name: '确认宫内妊娠', desc: 'B超确认孕囊位置，排除宫外孕风险', tag: 'important' }],
+  },
+  5: {
+    size: '芝麻粒', sizeDesc: '约 2mm', emoji: '🫘',
+    dev: '胚胎看起来像一只小蝌蚪，心脏开始形成并可能出现最初的搏动。神经管开始闭合，大脑和脊髓的雏形正在形成。',
+    tips: [
+      { type: 'care', icon: '💊', text: '继续服用叶酸，适当补充<strong>维生素D</strong>。' },
+      { type: 'nutrition', icon: '🥛', text: '多摄入富含<strong>蛋白质和钙</strong>的食物，如牛奶、鸡蛋、豆制品。' },
+      { type: 'exercise', icon: '🚶', text: '保持适度散步，避免久坐久站。' },
+    ],
+    checkup: [{ name: '早孕检查', desc: '血hCG和孕酮检查，确认妊娠状态', tag: 'important' }],
+  },
+  6: {
+    size: '蓝莓', sizeDesc: '约 4-6mm', emoji: '🫐',
+    dev: '宝宝的心脏已经可以跳动，每分钟约150次，是成人的两倍！面部五官开始有了轮廓，四肢的芽体也在生长。',
+    tips: [
+      { type: 'care', icon: '🤢', text: '可能出现早孕反应（恶心、倦怠），这是正常现象。少食多餐可缓解。' },
+      { type: 'nutrition', icon: '🍊', text: '补充<strong>维生素C</strong>，促进铁的吸收，多吃新鲜水果。' },
+      { type: 'warning', icon: '⚕️', text: '如出现<strong>剧烈腹痛或阴道出血</strong>，请立即就医。' },
+    ],
+    checkup: [{ name: 'B超检查', desc: '确认胎心胎芽，排除宫外孕', tag: 'important' }],
+  },
+  7: {
+    size: '蓝莓', sizeDesc: '约 10mm', emoji: '🫐',
+    dev: '胚胎的大小约有一粒蓝莓那么大。大脑发育迅速，每分钟产生约100个新脑细胞。眼睛的色素开始形成。',
+    tips: [
+      { type: 'nutrition', icon: '🥗', text: '适当增加<strong>膳食纤维</strong>摄入，预防便秘。多吃蔬菜和全谷物。' },
+      { type: 'care', icon: '💧', text: '注意多喝水，保持身体水分充足。' },
+    ],
+    checkup: [],
+  },
+  8: {
+    size: '树莓', sizeDesc: '约 1.6cm, 1g', emoji: '🍇',
+    dev: '宝宝的手指和脚趾开始分化（虽然还连在一起），尾巴正在消失。所有主要器官都已开始发育，宝宝开始有了微小的活动。',
+    tips: [
+      { type: 'care', icon: '🤢', text: '孕吐高峰期，尝试<strong>姜茶、苏打饼干</strong>来缓解恶心。' },
+      { type: 'nutrition', icon: '🥩', text: '补充<strong>铁</strong>质，多吃红肉、菠菜等含铁丰富的食物。' },
+      { type: 'warning', icon: '🚫', text: '<strong>绝对避免</strong>接触猫砂（弓形虫风险）。' },
+    ],
+    checkup: [{ name: '建档检查', desc: '开始选择产检医院，准备建立孕产妇保健手册', tag: 'normal' }],
+  },
+  9: {
+    size: '樱桃', sizeDesc: '约 2.3cm, 2g', emoji: '🍒',
+    dev: '宝宝已经从胚胎发育成胎儿了！所有主要关节都已形成，面部更加清晰，眼皮开始闭合，生殖器官开始发育。',
+    tips: [
+      { type: 'exercise', icon: '🧘', text: '可以开始做<strong>孕妇瑜伽</strong>，有助于缓解压力和身体不适。' },
+      { type: 'nutrition', icon: '🐟', text: '适量摄入<strong>DHA</strong>，每周吃2-3次深海鱼，促进宝宝大脑发育。' },
+    ],
+    checkup: [],
+  },
+  10: {
+    size: '草莓', sizeDesc: '约 3cm, 4g', emoji: '🍓',
+    dev: '宝宝可以吞咽和踢腿了！重要器官（肝、肾、大脑、肠）已经就位并开始运作，骨骼开始变硬。',
+    tips: [
+      { type: 'nutrition', icon: '🥛', text: '每天需要摄入约<strong>1000mg钙</strong>，如果饮食不够可考虑钙片。' },
+      { type: 'care', icon: '👗', text: '可能需要开始换穿宽松舒适的衣服了。' },
+    ],
+    checkup: [{ name: '早期唐筛（NT检查）', desc: '测量胎儿颈项透明层厚度，评估染色体异常风险', tag: 'important' }],
+  },
+  11: {
+    size: '无花果', sizeDesc: '约 4cm, 7g', emoji: '🫒',
+    dev: '宝宝的头部约占身体的一半，面部特征越来越清晰。指甲开始生长，外生殖器开始显现性别特征。',
+    tips: [
+      { type: 'care', icon: '😊', text: '激素变化可能导致情绪波动，和准爸爸多沟通，<strong>保持好心情</strong>很重要。' },
+      { type: 'exercise', icon: '🏊', text: '游泳是很好的孕期运动，可以减轻关节压力。' },
+    ],
+    checkup: [],
+  },
+  12: {
+    size: '青柠', sizeDesc: '约 5.4cm, 14g', emoji: '🍋',
+    dev: '宝宝开始练习反射动作——吸吮手指、面部表情变化。骨髓开始造血，肠道开始蠕动。到了这周末，<strong>流产风险大大降低</strong>！',
+    tips: [
+      { type: 'care', icon: '🎉', text: '恭喜进入<strong>孕中期</strong>！早孕反应会逐渐减轻，食欲开始恢复。' },
+      { type: 'nutrition', icon: '🍎', text: '均衡饮食，适当增加热量摄入，每天多摄入约<strong>300大卡</strong>。' },
+    ],
+    checkup: [
+      { name: 'NT检查（如未做）', desc: '需在12周前完成', tag: 'important' },
+      { name: '早期唐筛抽血', desc: '结合B超和血检评估唐氏综合征风险', tag: 'important' },
+    ],
+    warning: 'NT检查需在孕11-13+6周完成，请务必及时预约！',
+  },
+  13: {
+    size: '桃子', sizeDesc: '约 7.4cm, 23g', emoji: '🍑',
+    dev: '宝宝开始长出细细的胎毛，指纹正在形成。声带开始发育，虽然还不会哭。肠道开始从脐带移入腹腔。',
+    tips: [
+      { type: 'nutrition', icon: '🥜', text: '适量食用坚果（核桃、杏仁），补充<strong>优质脂肪和维生素E</strong>。' },
+      { type: 'care', icon: '🦷', text: '牙龈可能因激素变化变敏感，注意口腔护理。' },
+    ],
+    checkup: [],
+  },
+  14: {
+    size: '柠檬', sizeDesc: '约 8.7cm, 43g', emoji: '🍋',
+    dev: '宝宝开始练习呼吸动作——虽然羊水里没有空气。脖子变长了，可以抬头了。身体开始长出细细的毛发（毳毛）。',
+    tips: [
+      { type: 'exercise', icon: '🚶‍♀️', text: '每天坚持<strong>散步30分钟</strong>，有助于控制体重和促进血液循环。' },
+      { type: 'care', icon: '🧴', text: '腹部开始有微妙变化，可以使用<strong>防妊娠纹霜</strong>了。' },
+    ],
+    checkup: [],
+  },
+  15: {
+    size: '苹果', sizeDesc: '约 10cm, 70g', emoji: '🍎',
+    dev: '宝宝可以感知光线了！骨骼正在变硬，关节可以活动。如果做B超，你可能看到宝宝在打哈欠、做鬼脸。',
+    tips: [
+      { type: 'nutrition', icon: '🥬', text: '补充<strong>碘</strong>，适量食用海带、紫菜，促进宝宝甲状腺发育。' },
+      { type: 'care', icon: '💤', text: '建议<strong>左侧卧位</strong>睡眠，有利于胎盘供血。' },
+    ],
+    checkup: [],
+  },
+  16: {
+    size: '牛油果', sizeDesc: '约 11.6cm, 100g', emoji: '🥑',
+    dev: '宝宝的眼睛对光有反应了，面部表情更加丰富。循环系统和泌尿系统开始运作，宝宝开始向羊水中排尿。',
+    tips: [
+      { type: 'care', icon: '✋', text: '部分妈妈开始感觉到<strong>胎动</strong>了！像小鱼吐泡泡的感觉，初产妇可能稍晚。' },
+      { type: 'nutrition', icon: '🫐', text: '补充<strong>镁</strong>，多吃深绿色蔬菜和坚果，预防抽筋。' },
+    ],
+    checkup: [{ name: '中期唐筛 / 无创DNA', desc: '抽血检测胎儿染色体异常风险（可选无创DNA更准确）', tag: 'normal' }],
+  },
+  17: {
+    size: '梨', sizeDesc: '约 13cm, 140g', emoji: '🍐',
+    dev: '宝宝的骨骼逐渐变硬（从软骨变成真正的骨头），脐带变粗变强。宝宝可以听到你的声音了！',
+    tips: [
+      { type: 'care', icon: '🎵', text: '<strong>多和宝宝说话</strong>、听音乐，听觉正在发育，宝宝能记住你的声音。' },
+      { type: 'exercise', icon: '🧘‍♀️', text: '可以尝试<strong>凯格尔运动</strong>（骨盆底肌训练），为分娩做准备。' },
+    ],
+    checkup: [],
+  },
+  18: {
+    size: '甜椒', sizeDesc: '约 14.2cm, 190g', emoji: '🫑',
+    dev: '如果怀的是女孩，她的子宫和输卵管已经形成；如果是男孩，生殖器已经清晰可见。宝宝开始打嗝了！',
+    tips: [
+      { type: 'nutrition', icon: '🥩', text: '增加<strong>蛋白质</strong>摄入，每天需要约75-100g，支持宝宝快速生长。' },
+      { type: 'care', icon: '🦵', text: '注意补充<strong>钙和维生素D</strong>，预防腿部抽筋。' },
+    ],
+    checkup: [],
+  },
+  19: {
+    size: '芒果', sizeDesc: '约 15.3cm, 240g', emoji: '🥭',
+    dev: '宝宝的五感都在快速发育——触觉、味觉、嗅觉、视觉和听觉。胎毛开始覆盖全身，保护宝宝的皮肤。',
+    tips: [
+      { type: 'care', icon: '🔬', text: '可能会做<strong>大排畸B超</strong>（通常在20-24周），提前预约。' },
+      { type: 'nutrition', icon: '🍌', text: '适当增加<strong>碳水化合物</strong>摄入，满足宝宝和你的能量需求。' },
+    ],
+    checkup: [],
+  },
+  20: {
+    size: '香蕉', sizeDesc: '约 16.4cm（头臀）, 300g', emoji: '🍌',
+    dev: '宝宝已经长到一根香蕉那么大！一个重要的里程碑：从此刻起宝宝开始以头朝下的姿势生长。你现在已经怀孕<strong>整整一半</strong>了！',
+    tips: [
+      { type: 'care', icon: '🎉', text: '<strong>孕期过半！</strong>宝宝进入快速生长期，你可能需要更换孕妇装了。' },
+      { type: 'exercise', icon: '🏊', text: '继续保持适度运动，有助于控制体重和增强体力。' },
+      { type: 'nutrition', icon: '🥛', text: '每天确保<strong>1000mg钙</strong>摄入，奶制品、豆制品是好的来源。' },
+    ],
+    checkup: [],
+  },
+  21: {
+    size: '胡萝卜', sizeDesc: '约 26.7cm, 360g', emoji: '🥕',
+    dev: '宝宝的眉毛和眼睑已经完全形成，眼球虽然发育完成但虹膜还缺乏色素。宝宝开始有规律的睡眠和清醒周期。',
+    tips: [
+      { type: 'care', icon: '💓', text: '你可能会感觉到<strong>更明显的胎动</strong>，有时候甚至能看到肚皮上小拳头顶出的形状。' },
+      { type: 'nutrition', icon: '🥚', text: '补充<strong>铁质</strong>，孕期血容量增加需要更多铁来制造血红蛋白。' },
+    ],
+    checkup: [],
+  },
+  22: {
+    size: '玉米穗', sizeDesc: '约 27.8cm, 430g', emoji: '🌽',
+    dev: '宝宝的嘴唇、眼皮和眉毛更加清晰，眼睛已经形成（虽然虹膜还没有颜色）。指甲完全长出，宝宝可能已经开始抓握了。',
+    tips: [
+      { type: 'care', icon: '🩺', text: '如果出现<strong>小腿水肿</strong>，多休息，抬高双腿，避免长时间站立。' },
+      { type: 'nutrition', icon: '💧', text: '保持充足水分摄入，每天至少<strong>8杯水</strong>，预防泌尿系统感染。' },
+    ],
+    checkup: [],
+  },
+  23: {
+    size: '茄子', sizeDesc: '约 28.9cm, 500g', emoji: '🍆',
+    dev: '宝宝的皮肤还是红红的、皱皱的（因为没有脂肪），但正在快速增重。听力已经很敏锐，能听到心跳声、消化声和外界的声音。',
+    tips: [
+      { type: 'care', icon: '😴', text: '尝试<strong>侧卧位</strong>，在膝盖间放一个枕头，提高睡眠质量。' },
+      { type: 'warning', icon: '⚕️', text: '注意观察<strong>胎动频率</strong>，如果突然减少或异常剧烈，请及时就医。' },
+    ],
+    checkup: [],
+  },
+  24: {
+    size: '木瓜', sizeDesc: '约 30cm, 600g', emoji: '🍈',
+    dev: '宝宝的肺部正在发育——产生表面活性物质，这是出生后呼吸所必需的。宝宝已经有比较固定的作息模式了。',
+    tips: [
+      { type: 'care', icon: '🩸', text: '24-28周要做<strong>妊娠期糖尿病筛查（OGTT）</strong>，前一晚10点后禁食。' },
+      { type: 'nutrition', icon: '🥦', text: '控制糖分摄入，多吃低GI食物，预防妊娠期糖尿病。' },
+    ],
+    checkup: [
+      { name: '大排畸B超', desc: '详细检查宝宝各器官发育情况（通常20-24周完成）', tag: 'important' },
+    ],
+    warning: '大排畸B超和糖耐检查是孕中期最重要的两项检查，请及时完成！',
+  },
+  25: {
+    size: '花菜', sizeDesc: '约 34.6cm, 660g', emoji: '🥦',
+    dev: '宝宝开始长出真正的头发，皮肤慢慢变得不再那么透明。鼻孔开始打开，肺部继续发育。',
+    tips: [
+      { type: 'nutrition', icon: '🥜', text: '补充<strong>Omega-3脂肪酸</strong>，有助于宝宝的大脑和视力发育。' },
+      { type: 'care', icon: '💪', text: '可能出现<strong>腰背酸痛</strong>，注意姿势，使用孕妇腰托可以缓解。' },
+    ],
+    checkup: [],
+  },
+  26: {
+    size: '西葫芦', sizeDesc: '约 35.6cm, 760g', emoji: '🥒',
+    dev: '宝宝的眼睛开始睁开！对于之前一直在黑暗中的宝宝来说，这是一个大事件。宝宝的免疫系统也在不断加强。',
+    tips: [
+      { type: 'care', icon: '🔬', text: '如果还没做<strong>糖耐量检查</strong>，请尽快安排（24-28周窗口期）。' },
+      { type: 'exercise', icon: '🧘', text: '做<strong>骨盆倾斜运动</strong>，缓解下背部不适。' },
+    ],
+    checkup: [{ name: '糖耐量试验（OGTT）', desc: '75g葡萄糖耐量试验，筛查妊娠期糖尿病', tag: 'important' }],
+  },
+  27: {
+    size: '花椰菜', sizeDesc: '约 36.6cm, 875g', emoji: '🥬',
+    dev: '宝宝可以做梦了！脑部活动已显示睡眠周期包含快速眼动（REM）阶段。宝宝每天练习呼吸、吞咽和吮吸。',
+    tips: [
+      { type: 'care', icon: '✋', text: '进入<strong>孕晚期</strong>（28周起），开始关注<strong>数胎动</strong>，每天固定时间数1小时。' },
+      { type: 'nutrition', icon: '🥩', text: '增加<strong>铁</strong>摄入，孕晚期需求更大，必要时遵医嘱服用铁剂。' },
+    ],
+    checkup: [],
+  },
+  28: {
+    size: '茄子', sizeDesc: '约 37.6cm, 1000g', emoji: '🍆',
+    dev: '宝宝已经重达1公斤了！恭喜进入孕晚期。大脑发育迅速，褶皱越来越多。宝宝可以眨眼、做梦，还可以感受到光线的明暗。',
+    tips: [
+      { type: 'care', icon: '🎉', text: '<strong>孕晚期正式开始！</strong>从现在起每2周产检一次。' },
+      { type: 'care', icon: '👶', text: '开始关注<strong>胎动规律</strong>，如果感觉宝宝活动明显减少，及时就医。' },
+      { type: 'nutrition', icon: '🥛', text: '钙需求量增加到<strong>1200mg/天</strong>，注意饮食补充和钙剂。' },
+    ],
+    checkup: [{ name: '常规产检', desc: '体重、血压、宫高腹围、胎心率，检查是否有水肿和蛋白尿', tag: 'normal' }],
+    warning: '从28周起进入孕晚期，产检频率增加为每两周一次，请按时产检！',
+  },
+  29: {
+    size: '南瓜', sizeDesc: '约 38.6cm, 1150g', emoji: '🎃',
+    dev: '宝宝的骨骼正在变硬（除了头骨，头骨保持柔软以便顺利通过产道）。肌肉和肺部继续成熟。',
+    tips: [
+      { type: 'care', icon: '🛏️', text: '翻身可能越来越困难，尝试<strong>孕妇U型枕</strong>改善睡眠。' },
+      { type: 'warning', icon: '⚠️', text: '留意<strong>早产征兆</strong>：规律宫缩、见红、破水，如有请立即就医。' },
+    ],
+    checkup: [{ name: '常规产检', desc: '每两周一次，监测母儿健康状况', tag: 'normal' }],
+  },
+  30: {
+    size: '椰子', sizeDesc: '约 39.9cm, 1319g', emoji: '🥥',
+    dev: '宝宝的大脑发育非常迅速，头部变得更大。宝宝可以转动头部、做出面部表情。男孩的睾丸开始下降到阴囊中。',
+    tips: [
+      { type: 'nutrition', icon: '🥩', text: '适当增加<strong>优质蛋白</strong>，鱼肉、禽肉、蛋奶均衡摄入。' },
+      { type: 'care', icon: '📐', text: '可以开始<strong>数胎动</strong>了——每天早中晚各数1小时，正常情况每小时≥3次。' },
+    ],
+    checkup: [],
+  },
+  31: {
+    size: '椰子', sizeDesc: '约 41.1cm, 1502g', emoji: '🥥',
+    dev: '宝宝的五官已经成形，可以感受疼痛。所有五种感觉都已发育。宝宝在子宫里越来越挤，但仍然活跃地运动。',
+    tips: [
+      { type: 'care', icon: '🎒', text: '是时候开始<strong>准备待产包</strong>了，列出清单逐步准备。' },
+      { type: 'care', icon: '🏥', text: '了解<strong>分娩知识</strong>，考虑是否参加分娩课程。' },
+    ],
+    checkup: [],
+  },
+  32: {
+    size: '南瓜', sizeDesc: '约 42.4cm, 1702g', emoji: '🎃',
+    dev: '宝宝的指甲已经长到指尖，真发越来越浓密。肺部继续成熟，表面活性物质越来越多。宝宝正以惊人的速度增重。',
+    tips: [
+      { type: 'care', icon: '👶', text: '宝宝的<strong>活动空间</strong>越来越小，你可能感觉到的是"翻滚"而不是"踢"。' },
+      { type: 'nutrition', icon: '🥛', text: '继续保持均衡饮食，<strong>不要暴饮暴食</strong>，控制孕期体重增长。' },
+    ],
+    checkup: [{ name: '常规产检', desc: '评估胎儿大小和胎位', tag: 'normal' }],
+  },
+  33: {
+    size: '菠萝', sizeDesc: '约 43.7cm, 1918g', emoji: '🍍',
+    dev: '宝宝的骨骼在变硬（除了头骨），免疫系统在加强。如果早产，宝宝有很好的存活几率。皮肤开始从红变粉。',
+    tips: [
+      { type: 'care', icon: '👶', text: '开始关注<strong>胎位</strong>，如果宝宝是臀位，医生可能会建议外倒转术。' },
+      { type: 'care', icon: '📋', text: '确认<strong>待产包</strong>已准备好，了解去医院的路线和流程。' },
+    ],
+    checkup: [],
+  },
+  34: {
+    size: '哈密瓜', sizeDesc: '约 45cm, 2125g', emoji: '🍈',
+    dev: '宝宝的中枢神经系统和肺部基本成熟。指甲已经长出指尖边缘，宝宝可能在抓着自己的脐带玩。',
+    tips: [
+      { type: 'care', icon: '🏥', text: '确认<strong>分娩医院</strong>和<strong>主治医生</strong>，了解入院流程。' },
+      { type: 'warning', icon: '⚠️', text: '注意<strong>先兆子痫</strong>症状：严重头痛、视力模糊、突然水肿，需立即就医。' },
+    ],
+    checkup: [{ name: '常规产检', desc: '开始每周一次产检，评估母儿状况', tag: 'normal' }],
+  },
+  35: {
+    size: '蜜瓜', sizeDesc: '约 46.2cm, 2383g', emoji: '🍈',
+    dev: '宝宝的大部分发育已经完成，接下来主要是<strong>长肉</strong>。皮下脂肪增加，宝宝越来越圆润可爱。',
+    tips: [
+      { type: 'care', icon: '📋', text: '从36周起<strong>每周产检</strong>一次，确认胎位和胎心。' },
+      { type: 'care', icon: '🧳', text: '待产包放入<strong>随时可拿</strong>的位置，证件资料整理好。' },
+    ],
+    checkup: [],
+  },
+  36: {
+    size: '罗马甜瓜', sizeDesc: '约 47.4cm, 2622g', emoji: '🍈',
+    dev: '宝宝继续长胖，皮下脂肪使皮肤变得光滑。大部分宝宝已经转为头位（头朝下），为分娩做准备。',
+    tips: [
+      { type: 'care', icon: '✅', text: '<strong>每周产检</strong>开始！注意观察<strong>见红、破水、规律宫缩</strong>等分娩先兆。' },
+      { type: 'nutrition', icon: '🍚', text: '可以适当增加<strong>碳水化合物</strong>，为分娩储备能量。' },
+    ],
+    checkup: [
+      { name: '常规产检（每周）', desc: '胎心监护、宫高腹围、检查胎位', tag: 'normal' },
+    ],
+    warning: '36周起每周产检一次，随时做好分娩准备！',
+  },
+  37: {
+    size: '瑞士卷', sizeDesc: '约 48.6cm, 2859g', emoji: '🍥',
+    dev: '宝宝已经<strong>足月</strong>了！肺部已经完全成熟，可以在子宫外独立呼吸。宝宝继续积累脂肪，为出生后调节体温做准备。',
+    tips: [
+      { type: 'care', icon: '🎉', text: '<strong>宝宝足月了！</strong>随时可能发动分娩，保持手机畅通，随时准备出发。' },
+      { type: 'care', icon: '💪', text: '了解<strong>分娩三个产程</strong>，学习拉玛泽呼吸法等镇痛技巧。' },
+    ],
+    checkup: [
+      { name: '常规产检（每周）', desc: '评估宫颈成熟度、胎心监护', tag: 'normal' },
+    ],
+  },
+  38: {
+    size: '韭菜', sizeDesc: '约 49.8cm, 3083g', emoji: '🥬',
+    dev: '宝宝在继续长肉增重，抓握力已经很强。肠道里在积累<strong>胎便</strong>（墨绿色的），出生后会排出。',
+    tips: [
+      { type: 'care', icon: '🔬', text: '注意观察<strong>破水</strong>——如果羊水流出，记录颜色和时间，立即就医。' },
+      { type: 'exercise', icon: '🚶', text: '继续适度活动，<strong>散步</strong>有助于促进分娩发动。' },
+    ],
+    checkup: [
+      { name: '常规产检（每周）', desc: '每周胎心监护，评估分娩条件', tag: 'normal' },
+    ],
+  },
+  39: {
+    size: '小西瓜', sizeDesc: '约 50.7cm, 3288g', emoji: '🍉',
+    dev: '宝宝的<strong>胎盘</strong>继续提供抗体，增强宝宝的免疫力。宝宝已经做好了和你见面的准备！',
+    tips: [
+      { type: 'care', icon: '📋', text: '最后检查<strong>待产包</strong>：身份证、医保卡、产检资料、手机充电器等。' },
+      { type: 'care', icon: '👨‍👩‍👦', text: '和准爸爸确认<strong>去医院路线</strong>和<strong>紧急联系人</strong>。' },
+    ],
+    checkup: [
+      { name: '常规产检（每周）', desc: '每周胎心监护，评估胎儿成熟度', tag: 'normal' },
+    ],
+  },
+  40: {
+    size: '小西瓜', sizeDesc: '约 51.2cm, 3462g', emoji: '🍉',
+    dev: '宝宝的<strong>预产期</strong>到了！不过只有约5%的宝宝会在这一天准时出生。宝宝已经完全发育成熟，随时准备来到这个世界。',
+    tips: [
+      { type: 'care', icon: '💜', text: '<strong>预产期是估算值</strong>，提前或推迟两周内都是正常的。' },
+      { type: 'care', icon: '🚨', text: '<strong>立即就医的信号</strong>：规律宫缩（每5分钟一次）、破水、大量出血、胎动明显减少。' },
+      { type: 'care', icon: '💕', text: '保持放松的心情，充分休息，相信自己和宝宝，<strong>很快就要见面了</strong>！' },
+    ],
+    checkup: [
+      { name: '常规产检', desc: '胎心监护，评估分娩方式', tag: 'important' },
+    ],
+    warning: '如超过41周仍未分娩，医生可能会建议催产或剖宫产，请遵医嘱。',
+  },
+};
+
+// Fill in weeks with no explicit data by finding the nearest earlier week
+function getWeekData(week) {
+  if (WEEK_DATA[week]) return WEEK_DATA[week];
+  // Find nearest earlier week
+  for (let w = week - 1; w >= 4; w--) {
+    if (WEEK_DATA[w]) return WEEK_DATA[w];
+  }
+  return WEEK_DATA[4];
+}
+
+// ========== State ==========
+let lmpDate = null;
+let eddDate = null;
+let currentWeek = 0;
+let currentDay = 0;
+let dateType = 'lmp';
+let viewedTimelineWeek = null;
+let weightRecords = JSON.parse(localStorage.getItem('pregnancy_weights') || '[]');
+let checkedItems = JSON.parse(localStorage.getItem('pregnancy_checks') || '{}');
+
+// ========== Functions ==========
+function setDateType(type) {
+  dateType = type;
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  event.target.classList.add('active');
+  document.getElementById('dateLabel').textContent = type === 'lmp' ? '末次月经第一天' : '预产期';
+}
+
+function calculateWeek(lmp) {
+  const now = new Date();
+  const diff = now - lmp;
+  const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+  const week = Math.floor(days / 7);
+  const day = days % 7;
+  return { week: Math.max(0, week), day: Math.max(0, day), totalDays: days };
+}
+
+function getEDD(lmp) {
+  const edd = new Date(lmp);
+  edd.setDate(edd.getDate() + 280);
+  return edd;
+}
+
+function startApp() {
+  const dateVal = document.getElementById('dateInput').value;
+  if (!dateVal) { alert('请选择日期'); return; }
+
+  const date = new Date(dateVal + 'T00:00:00');
+  if (dateType === 'lmp') {
+    lmpDate = date;
+    eddDate = getEDD(lmpDate);
+  } else {
+    eddDate = date;
+    lmpDate = new Date(eddDate);
+    lmpDate.setDate(lmpDate.getDate() - 280);
+  }
+
+  localStorage.setItem('pregnancy_lmp', lmpDate.toISOString());
+  localStorage.setItem('pregnancy_edd', eddDate.toISOString());
+
+  document.getElementById('setupScreen').style.display = 'none';
+  document.getElementById('mainApp').classList.add('active');
+  updateUI();
+
+  // Sync to Firebase
+  saveToFirebase();
+  if (roomCode && !syncListener) startListening();
+}
+
+function updateUI() {
+  const calc = calculateWeek(lmpDate);
+  currentWeek = calc.week;
+  currentDay = calc.day;
+
+  // Clamp to display range
+  const displayWeek = Math.min(Math.max(currentWeek, 4), 40);
+
+  // Week display
+  document.getElementById('weekNum').textContent = `第 ${displayWeek} 周`;
+  document.getElementById('weekLabel').textContent = `孕 ${displayWeek} 周 + ${currentDay} 天`;
+
+  // Trimester
+  let trimester = '孕早期';
+  if (displayWeek >= 28) trimester = '孕晚期';
+  else if (displayWeek >= 13) trimester = '孕中期';
+  document.getElementById('trimesterTag').textContent = trimester;
+
+  // Progress
+  const totalDays = calc.totalDays;
+  const progress = Math.min(Math.max(totalDays / 280 * 100, 0), 100);
+  document.getElementById('progressPercent').textContent = progress.toFixed(1) + '%';
+  document.getElementById('progressFill').style.width = progress + '%';
+
+  // Baby size
+  const data = getWeekData(displayWeek);
+  document.getElementById('babyEmoji').textContent = data.emoji;
+  document.getElementById('babySizeText').textContent = `大约一颗 ${data.size} 🌱`;
+  document.getElementById('babySizeDesc').textContent = data.sizeDesc;
+
+  // Days left
+  const daysLeft = Math.max(0, Math.ceil((eddDate - new Date()) / (1000 * 60 * 60 * 24)));
+  document.getElementById('daysLeft').textContent = daysLeft + ' 天';
+
+  if (daysLeft <= 0 && currentWeek < 42) {
+    document.getElementById('daysLeft').textContent = '随时可能发动 💕';
+    document.querySelector('.days-countdown .txt').textContent = '预产期已过';
+  }
+
+  // Dev content
+  renderDevContent(displayWeek, data);
+
+  // Warning
+  if (data.warning) {
+    document.getElementById('warningBanner').style.display = 'flex';
+    document.getElementById('warningText').textContent = data.warning;
+  } else {
+    document.getElementById('warningBanner').style.display = 'none';
+  }
+
+  // Tips
+  renderTips(data);
+
+  // Checkup
+  renderCheckup(displayWeek, data);
+
+  // Timeline
+  viewedTimelineWeek = displayWeek;
+  renderTimelineNav();
+  renderTimelineContent(displayWeek);
+
+  // Weight
+  renderWeightLog();
+
+  // Recipe seed based on today's date for daily rotation
+  const today = new Date();
+  recipeSeed = today.getFullYear() * 10000 + (today.getMonth() + 1) * 100 + today.getDate();
+}
+
+function renderDevContent(week, data) {
+  const container = document.getElementById('devContent');
+  container.innerHTML = `
+    <div class="dev-card">
+      <div class="dev-emoji">${data.emoji}</div>
+      <div class="dev-content">
+        <h4>第 ${week} 周：${data.size}大小</h4>
+        <p>${data.dev}</p>
+      </div>
+    </div>
+  `;
+}
+
+function renderTips(data) {
+  const container = document.getElementById('tipsContent');
+  container.innerHTML = data.tips.map(tip => `
+    <div class="tip-card tip-${tip.type}">
+      <span class="tip-icon">${tip.icon}</span>
+      <div class="tip-text">${tip.text}</div>
+    </div>
+  `).join('');
+}
+
+function renderCheckup(week, data) {
+  const container = document.getElementById('checkupContent');
+
+  // Gather all checkups up to current week
+  const allCheckups = [];
+  for (let w = 4; w <= week; w++) {
+    const wd = getWeekData(w);
+    if (wd.checkup) {
+      wd.checkup.forEach(c => {
+        const key = `w${w}_${c.name}`;
+        allCheckups.push({ ...c, week: w, key });
+      });
+    }
+  }
+
+  if (allCheckups.length === 0) {
+    container.innerHTML = '<p style="color: var(--text-light); font-size: 13px; text-align: center; padding: 20px;">暂无产检项目</p>';
+    return;
+  }
+
+  container.innerHTML = allCheckups.map(item => {
+    const checked = checkedItems[item.key];
+    return `
+      <div class="checklist-item">
+        <input type="checkbox" ${checked ? 'checked' : ''} onchange="toggleCheck('${item.key}', this.checked)">
+        <div class="check-content ${checked ? 'checked' : ''}">
+          <h4>第${item.week}周 · ${item.name}</h4>
+          <p>${item.desc}</p>
+        </div>
+        <span class="check-tag tag-${item.tag}">${item.tag === 'important' ? '必做' : item.tag === 'normal' ? '常规' : '可选'}</span>
+      </div>
+    `;
+  }).join('');
+}
+
+function toggleCheck(key, checked) {
+  checkedItems[key] = checked;
+  localStorage.setItem('pregnancy_checks', JSON.stringify(checkedItems));
+  updateUI();
+  saveToFirebase();
+}
+
+function renderTimelineNav() {
+  const nav = document.getElementById('timelineNav');
+  // Group by trimester
+  const groups = [
+    { label: '孕早期', start: 4, end: 12 },
+    { label: '孕中期', start: 13, end: 27 },
+    { label: '孕晚期', start: 28, end: 40 },
+  ];
+
+  nav.innerHTML = groups.map(g => {
+    return `<button class="timeline-btn" onclick="scrollTimeline(${g.start}, this)">${g.label} (${g.start}-${g.end}周)</button>`;
+  }).join('');
+}
+
+function scrollTimeline(startWeek, btn) {
+  document.querySelectorAll('.timeline-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  viewedTimelineWeek = startWeek;
+  renderTimelineContent(startWeek);
+}
+
+function renderTimelineContent(week) {
+  const title = document.getElementById('timelineTitle');
+  const content = document.getElementById('timelineContent');
+  const data = getWeekData(week);
+
+  title.textContent = `第 ${week} 周`;
+
+  let html = `
+    <div class="dev-card">
+      <div class="dev-emoji">${data.emoji}</div>
+      <div class="dev-content">
+        <h4>宝宝大约有${data.size}那么大</h4>
+        <p>${data.dev}</p>
+      </div>
+    </div>
+  `;
+
+  if (data.tips) {
+    html += '<div style="margin-top:16px;font-size:14px;font-weight:600;color:var(--text-secondary);margin-bottom:10px;">温馨提示</div>';
+    html += data.tips.map(tip => `
+      <div class="tip-card tip-${tip.type}">
+        <span class="tip-icon">${tip.icon}</span>
+        <div class="tip-text">${tip.text}</div>
+      </div>
+    `).join('');
+  }
+
+  // Nav between weeks
+  html += `
+    <div style="display:flex;justify-content:space-between;margin-top:20px;padding-top:16px;border-top:1px solid var(--pink-100);">
+      <button onclick="changeTimelineWeek(-1)" style="padding:8px 16px;border:2px solid var(--pink-100);background:var(--white);border-radius:20px;font-size:13px;cursor:pointer;font-family:inherit;color:var(--text-secondary);${week <= 4 ? 'opacity:0.3;pointer-events:none;' : ''}">← 上一周</button>
+      <button onclick="jumpToCurrent()" style="padding:8px 16px;border:2px solid var(--pink-200);background:var(--pink-light);border-radius:20px;font-size:13px;cursor:pointer;font-family:inherit;color:var(--pink-500);">回到当前周</button>
+      <button onclick="changeTimelineWeek(1)" style="padding:8px 16px;border:2px solid var(--pink-100);background:var(--white);border-radius:20px;font-size:13px;cursor:pointer;font-family:inherit;color:var(--text-secondary);${week >= 40 ? 'opacity:0.3;pointer-events:none;' : ''}">下一周 →</button>
+    </div>
+  `;
+
+  content.innerHTML = html;
+}
+
+function changeTimelineWeek(delta) {
+  viewedTimelineWeek = Math.min(Math.max(viewedTimelineWeek + delta, 4), 40);
+  // Find the closest week with data
+  while (!WEEK_DATA[viewedTimelineWeek] && viewedTimelineWeek > 4 && delta > 0) viewedTimelineWeek++;
+  while (!WEEK_DATA[viewedTimelineWeek] && viewedTimelineWeek < 40 && delta < 0) viewedTimelineWeek--;
+  renderTimelineContent(viewedTimelineWeek);
+}
+
+function jumpToCurrent() {
+  viewedTimelineWeek = Math.min(Math.max(currentWeek, 4), 40);
+  renderTimelineContent(viewedTimelineWeek);
+}
+
+// ========== Recipe Data ==========
+const RECIPES = {
+  early: { // 孕早期 4-12周
+    breakfast: [
+      { name: '红枣山药粥', desc: '山药健脾养胃，红枣补气养血，缓解孕吐不适', ingredients: ['山药', '红枣', '小米', '枸杞'], nutrition: { cal: '220kcal', protein: '6g', folate: '高' } },
+      { name: '生姜红糖鸡蛋羹', desc: '生姜止呕暖胃，红糖补铁，适合晨起食用', ingredients: ['生姜', '红糖', '鸡蛋', '温水'], nutrition: { cal: '180kcal', protein: '8g', iron: '中' } },
+      { name: '苏打饼干配牛奶', desc: '苏打饼干中和胃酸，缓解恶心，牛奶补钙', ingredients: ['苏打饼干', '牛奶', '蓝莓'], nutrition: { cal: '280kcal', protein: '10g', calcium: '高' } },
+      { name: '南瓜小米糊', desc: '小米养胃安神，南瓜富含β-胡萝卜素，好消化', ingredients: ['南瓜', '小米', '核桃碎'], nutrition: { cal: '200kcal', protein: '5g', VA: '高' } },
+      { name: '香蕉燕麦杯', desc: '燕麦富含膳食纤维，香蕉补钾，加酸奶口感更佳', ingredients: ['燕麦', '香蕉', '酸奶', '蜂蜜'], nutrition: { cal: '260kcal', protein: '8g', fiber: '高' } },
+      { name: '番茄鸡蛋面', desc: '番茄开胃补充维生素C，面条易消化补充碳水', ingredients: ['番茄', '鸡蛋', '面条', '小葱'], nutrition: { cal: '320kcal', protein: '12g', VC: '高' } },
+      { name: '牛油果吐司', desc: '牛油果富含叶酸和健康脂肪，全麦面包补充膳食纤维', ingredients: ['牛油果', '全麦吐司', '鸡蛋', '黑胡椒'], nutrition: { cal: '290kcal', protein: '9g', folate: '高' } },
+    ],
+    lunch: [
+      { name: '番茄牛肉面', desc: '番茄酸甜开胃，牛肉补充优质蛋白和铁质', ingredients: ['番茄', '牛肉', '面条', '菠菜'], nutrition: { cal: '450kcal', protein: '28g', iron: '高' } },
+      { name: '清蒸鲈鱼配糙米饭', desc: '鲈鱼富含DHA和优质蛋白，清蒸保留营养', ingredients: ['鲈鱼', '糙米', '姜丝', '葱花'], nutrition: { cal: '420kcal', protein: '30g', DHA: '高' } },
+      { name: '西蓝花炒虾仁', desc: '虾仁高蛋白低脂肪，西蓝花富含叶酸和维生素C', ingredients: ['西蓝花', '虾仁', '蒜末', '料酒'], nutrition: { cal: '350kcal', protein: '25g', folate: '高' } },
+      { name: '鸡肉蔬菜粥', desc: '鸡胸肉易消化，搭配多种蔬菜均衡营养', ingredients: ['鸡胸肉', '大米', '胡萝卜', '香菇', '青菜'], nutrition: { cal: '380kcal', protein: '22g', VA: '高' } },
+      { name: '蒜蓉粉丝蒸虾', desc: '虾富含蛋白质和钙，粉丝碳水好消化', ingredients: ['大虾', '粉丝', '蒜蓉', '蒸鱼豉油'], nutrition: { cal: '320kcal', protein: '26g', calcium: '高' } },
+      { name: '酸汤肥牛', desc: '酸汤开胃刺激食欲，肥牛补铁补蛋白，适合孕吐期', ingredients: ['肥牛', '金针菇', '泡椒', '番茄', '香菜'], nutrition: { cal: '400kcal', protein: '24g', iron: '高' } },
+      { name: '香菇蒸鸡', desc: '香菇多糖增强免疫力，鸡肉补蛋白，蒸制易消化', ingredients: ['鸡腿', '香菇', '红枣', '姜片'], nutrition: { cal: '380kcal', protein: '28g', fiber: '中' } },
+    ],
+    dinner: [
+      { name: '山药排骨汤', desc: '排骨补钙补铁，山药健脾，汤品暖胃易吸收', ingredients: ['排骨', '山药', '枸杞', '姜片'], nutrition: { cal: '350kcal', protein: '22g', calcium: '高' } },
+      { name: '清炒时蔬配杂粮饭', desc: '多种绿叶蔬菜补充叶酸和纤维，杂粮饭营养全面', ingredients: ['菠菜', '生菜', '杂粮米', '蒜末'], nutrition: { cal: '320kcal', protein: '10g', folate: '高' } },
+      { name: '豆腐鲫鱼汤', desc: '鲫鱼和豆腐都是优质蛋白和钙的来源，汤味鲜美', ingredients: ['鲫鱼', '豆腐', '姜片', '香菜'], nutrition: { cal: '280kcal', protein: '24g', calcium: '高' } },
+      { name: '西红柿鸡蛋疙瘩汤', desc: '疙瘩汤暖胃易消化，适合食欲不佳时食用', ingredients: ['面粉', '番茄', '鸡蛋', '紫菜'], nutrition: { cal: '300kcal', protein: '12g', VC: '高' } },
+      { name: '白灼虾配杂粮饭', desc: '白灼做法保留虾的营养，杂粮饭补充B族维生素', ingredients: ['大虾', '杂粮米', '芦笋', '生抽'], nutrition: { cal: '360kcal', protein: '28g', VB: '高' } },
+      { name: '萝卜牛腩煲', desc: '白萝卜促消化，牛腩补铁补蛋白，煲汤入味', ingredients: ['牛腩', '白萝卜', '姜片', '八角'], nutrition: { cal: '420kcal', protein: '26g', iron: '高' } },
+      { name: '香菇鸡汤面', desc: '鸡汤营养滋补，面条好消化，香菇增鲜提免疫', ingredients: ['鸡腿', '香菇', '面条', '青菜', '枸杞'], nutrition: { cal: '380kcal', protein: '22g', VA: '中' } },
+    ],
+    snack: [
+      { name: '酸奶水果杯', desc: '酸奶补钙补益生菌，水果补充维生素', ingredients: ['酸奶', '草莓', '蓝莓', '燕麦'], nutrition: { cal: '150kcal', protein: '6g', calcium: '高' } },
+      { name: '坚果拼盘', desc: '核桃补DHA，杏仁补VE，腰果补锌，每日一小把', ingredients: ['核桃', '杏仁', '腰果', '蔓越莓干'], nutrition: { cal: '180kcal', protein: '5g', VE: '高' } },
+      { name: '蒸苹果配肉桂', desc: '蒸苹果温和不刺激肠胃，肉桂暖胃', ingredients: ['苹果', '肉桂粉', '蜂蜜'], nutrition: { cal: '120kcal', protein: '1g', fiber: '中' } },
+    ]
+  },
+  mid: { // 孕中期 13-27周
+    breakfast: [
+      { name: '菠菜鸡蛋饼配牛奶', desc: '菠菜富含叶酸和铁，鸡蛋补蛋白，均衡早餐', ingredients: ['菠菜', '鸡蛋', '面粉', '牛奶'], nutrition: { cal: '320kcal', protein: '16g', folate: '高' } },
+      { name: '紫薯燕麦粥', desc: '紫薯富含花青素，燕麦补膳食纤维，饱腹感强', ingredients: ['紫薯', '燕麦', '牛奶', '核桃'], nutrition: { cal: '280kcal', protein: '9g', fiber: '高' } },
+      { name: '三文鱼牛油果吐司', desc: '三文鱼DHA丰富，牛油果叶酸高，营养满分早餐', ingredients: ['三文鱼', '牛油果', '全麦吐司', '柠檬汁'], nutrition: { cal: '350kcal', protein: '18g', DHA: '高' } },
+      { name: '南瓜籽豆浆', desc: '南瓜籽补锌补铁，豆浆补植物蛋白，口味香醇', ingredients: ['南瓜籽', '黄豆', '红枣', '蜂蜜'], nutrition: { cal: '220kcal', protein: '10g', zinc: '高' } },
+      { name: '鸡蛋灌饼配鲜榨果汁', desc: '鸡蛋灌饼蛋白质碳水搭配，橙汁补充维生素C', ingredients: ['鸡蛋', '面粉', '生菜', '橙子'], nutrition: { cal: '380kcal', protein: '14g', VC: '高' } },
+      { name: '芝麻花生糊', desc: '芝麻补钙补铁，花生补蛋白质，浓香好喝', ingredients: ['黑芝麻', '花生', '糯米粉', '冰糖'], nutrition: { cal: '300kcal', protein: '8g', calcium: '高' } },
+      { name: '杂粮鸡蛋羹', desc: '多种杂粮搭配蒸蛋，营养均衡易消化', ingredients: ['鸡蛋', '糙米', '小米', '玉米粒', '葱花'], nutrition: { cal: '250kcal', protein: '12g', fiber: '高' } },
+    ],
+    lunch: [
+      { name: '红烧猪蹄配西兰花', desc: '猪蹄富含胶原蛋白和钙，西兰花补充叶酸和VC', ingredients: ['猪蹄', '西兰花', '姜片', '八角'], nutrition: { cal: '520kcal', protein: '30g', collagen: '高' } },
+      { name: '清蒸鲈鱼配芦笋', desc: '鲈鱼DHA丰富，芦笋含叶酸和天冬氨酸，清爽营养', ingredients: ['鲈鱼', '芦笋', '姜丝', '蒸鱼豉油'], nutrition: { cal: '380kcal', protein: '32g', DHA: '高' } },
+      { name: '板栗烧鸡', desc: '板栗补叶酸和维生素C，鸡肉补蛋白，口味浓郁', ingredients: ['鸡腿', '板栗', '香菇', '酱油'], nutrition: { cal: '480kcal', protein: '28g', folate: '高' } },
+      { name: '海带排骨汤配糙米饭', desc: '海带补碘促进甲状腺发育，排骨补钙补铁', ingredients: ['排骨', '海带', '糙米', '姜片', '枸杞'], nutrition: { cal: '450kcal', protein: '26g', iodine: '高' } },
+      { name: '番茄炖牛腩', desc: '番茄红素抗氧化，牛腩补铁补蛋白，酸甜开胃', ingredients: ['牛腩', '番茄', '土豆', '胡萝卜', '洋葱'], nutrition: { cal: '500kcal', protein: '32g', iron: '高' } },
+      { name: '虾仁豆腐煲', desc: '虾仁补钙补蛋白，豆腐补植物蛋白和钙，双重补钙', ingredients: ['虾仁', '豆腐', '香菇', '豌豆', '姜汁'], nutrition: { cal: '360kcal', protein: '28g', calcium: '高' } },
+      { name: '蒜蓉蒸扇贝配杂粮饭', desc: '扇贝高蛋白低脂肪，蒜蓉杀菌增味', ingredients: ['扇贝', '粉丝', '蒜蓉', '小米辣', '杂粮米'], nutrition: { cal: '400kcal', protein: '30g', zinc: '高' } },
+    ],
+    dinner: [
+      { name: '鲫鱼豆腐汤配蔬菜沙拉', desc: '鲫鱼豆腐双重补钙，沙拉补充维生素和纤维', ingredients: ['鲫鱼', '豆腐', '生菜', '圣女果', '橄榄油'], nutrition: { cal: '380kcal', protein: '26g', calcium: '高' } },
+      { name: '胡萝卜玉米排骨汤', desc: '胡萝卜补VA，玉米补纤维，排骨补蛋白和钙', ingredients: ['排骨', '胡萝卜', '玉米', '山药'], nutrition: { cal: '400kcal', protein: '24g', VA: '高' } },
+      { name: '清蒸鳕鱼配时蔬', desc: '鳕鱼富含DHA，清蒸保留营养，搭配应季蔬菜', ingredients: ['鳕鱼', '菠菜', '胡萝卜', '柠檬'], nutrition: { cal: '320kcal', protein: '28g', DHA: '高' } },
+      { name: '莲藕花生猪蹄汤', desc: '莲藕补血，花生补蛋白，猪蹄补胶原蛋白', ingredients: ['猪蹄', '莲藕', '花生', '红枣', '姜片'], nutrition: { cal: '450kcal', protein: '26g', iron: '高' } },
+      { name: '杂菌鸡汤配杂粮饭', desc: '多种菌菇增强免疫力，鸡汤滋补蛋白质丰富', ingredients: ['鸡胸肉', '香菇', '杏鲍菇', '金针菇', '杂粮米'], nutrition: { cal: '400kcal', protein: '28g', VB: '高' } },
+      { name: '芹菜百合炒虾仁', desc: '芹菜降压补纤维，百合润肺安神，虾仁补蛋白', ingredients: ['芹菜', '百合', '虾仁', '红椒'], nutrition: { cal: '280kcal', protein: '22g', fiber: '高' } },
+      { name: '山药羊肉汤', desc: '羊肉温补补铁，山药健脾，冬季暖身佳品', ingredients: ['羊肉', '山药', '枸杞', '红枣', '姜片'], nutrition: { cal: '420kcal', protein: '26g', iron: '高' } },
+    ],
+    snack: [
+      { name: '牛奶木瓜银耳羹', desc: '木瓜含维生素A，银耳润肺，牛奶补钙', ingredients: ['牛奶', '木瓜', '银耳', '冰糖'], nutrition: { cal: '160kcal', protein: '6g', calcium: '高' } },
+      { name: '紫菜蛋花汤', desc: '紫菜补碘补铁，蛋花补蛋白，低卡又有营养', ingredients: ['紫菜', '鸡蛋', '虾皮', '香油'], nutrition: { cal: '80kcal', protein: '5g', iodine: '高' } },
+      { name: '红枣桂圆坚果球', desc: '红枣桂圆补气血，坚果补优质脂肪和矿物质', ingredients: ['红枣', '桂圆', '核桃', '芝麻', '蜂蜜'], nutrition: { cal: '200kcal', protein: '5g', iron: '高' } },
+    ]
+  },
+  late: { // 孕晚期 28-40周
+    breakfast: [
+      { name: '黑豆核桃红枣粥', desc: '黑豆补蛋白质和铁，核桃补DHA，红枣补气血', ingredients: ['黑豆', '核桃', '红枣', '大米'], nutrition: { cal: '300kcal', protein: '12g', iron: '高' } },
+      { name: '牛奶鸡蛋燕麦粥', desc: '牛奶补钙，鸡蛋补蛋白，燕麦补纤维，全面营养', ingredients: ['牛奶', '鸡蛋', '燕麦', '蓝莓', '蜂蜜'], nutrition: { cal: '340kcal', protein: '18g', calcium: '高' } },
+      { name: '玉米鸡蛋饼配豆浆', desc: '玉米补膳食纤维，鸡蛋豆浆双重蛋白，简单营养', ingredients: ['玉米面', '鸡蛋', '黄豆', '葱花'], nutrition: { cal: '320kcal', protein: '16g', fiber: '高' } },
+      { name: '红薯小米粥配溏心蛋', desc: '红薯补纤维和VA，小米养胃，鸡蛋补蛋白', ingredients: ['红薯', '小米', '鸡蛋', '枸杞'], nutrition: { cal: '280kcal', protein: '12g', VA: '高' } },
+      { name: '全麦三明治配牛奶', desc: '全麦面包补B族维生素，芝士补钙，生菜番茄补VC', ingredients: ['全麦面包', '鸡蛋', '芝士', '生菜', '番茄'], nutrition: { cal: '360kcal', protein: '18g', calcium: '高' } },
+      { name: '花生猪蹄汤面', desc: '猪蹄补胶原蛋白助泌乳，花生补血，面条好消化', ingredients: ['猪蹄', '花生', '面条', '青菜', '姜片'], nutrition: { cal: '400kcal', protein: '22g', collagen: '高' } },
+      { name: '芝麻核桃糊配蛋卷', desc: '芝麻核桃补DHA和钙，为产后泌乳做准备', ingredients: ['黑芝麻', '核桃', '糯米粉', '鸡蛋'], nutrition: { cal: '320kcal', protein: '10g', calcium: '高' } },
+    ],
+    lunch: [
+      { name: '冬瓜排骨汤配杂粮饭', desc: '冬瓜利水消肿，排骨补钙补蛋白，适合孕晚期', ingredients: ['排骨', '冬瓜', '杂粮米', '枸杞', '姜片'], nutrition: { cal: '440kcal', protein: '26g', calcium: '高' } },
+      { name: '清蒸鲈鱼配豆腐', desc: '鲈鱼DHA丰富，豆腐补钙，双重优质蛋白', ingredients: ['鲈鱼', '豆腐', '姜丝', '葱花'], nutrition: { cal: '380kcal', protein: '34g', DHA: '高' } },
+      { name: '木耳炒瘦肉配糙米饭', desc: '木耳补铁清肠道，瘦肉补蛋白和铁，糙米补纤维', ingredients: ['木耳', '瘦肉', '胡萝卜', '糙米', '青椒'], nutrition: { cal: '420kcal', protein: '28g', iron: '高' } },
+      { name: '番茄鱼头汤', desc: '鱼头富含DHA，番茄开胃补VC，汤鲜味美', ingredients: ['鱼头', '番茄', '豆腐', '姜片', '香菜'], nutrition: { cal: '360kcal', protein: '26g', DHA: '高' } },
+      { name: '板栗烧鸡配蔬菜', desc: '板栗补叶酸，鸡肉补蛋白，搭配蔬菜均衡营养', ingredients: ['鸡腿', '板栗', '西蓝花', '胡萝卜', '姜片'], nutrition: { cal: '480kcal', protein: '28g', folate: '高' } },
+      { name: '海带豆腐鱼汤', desc: '海带补碘，豆腐补钙，鱼肉补蛋白，一碗三补', ingredients: ['鱼片', '海带', '豆腐', '姜片', '葱花'], nutrition: { cal: '340kcal', protein: '28g', iodine: '高' } },
+      { name: '莲藕排骨配南瓜饭', desc: '莲藕补血，排骨补蛋白补钙，南瓜补VA和纤维', ingredients: ['排骨', '莲藕', '南瓜', '大米', '红枣'], nutrition: { cal: '460kcal', protein: '24g', iron: '高' } },
+    ],
+    dinner: [
+      { name: '鲫鱼通草汤', desc: '通草促进乳汁分泌，鲫鱼补蛋白补钙，为哺乳做准备', ingredients: ['鲫鱼', '通草', '姜片', '红枣'], nutrition: { cal: '280kcal', protein: '24g', calcium: '高' } },
+      { name: '白萝卜羊肉汤配馒头', desc: '羊肉温补补铁，萝卜促消化，适合冬季孕晚期', ingredients: ['羊肉', '白萝卜', '馒头', '枸杞', '姜片'], nutrition: { cal: '440kcal', protein: '26g', iron: '高' } },
+      { name: '虾仁蒸蛋配蔬菜', desc: '虾仁蒸蛋双重蛋白，易消化好吸收，蔬菜补维生素', ingredients: ['虾仁', '鸡蛋', '菠菜', '胡萝卜'], nutrition: { cal: '320kcal', protein: '22g', calcium: '高' } },
+      { name: '核桃红枣鸡汤', desc: '核桃补DHA，红枣补气血，鸡汤滋补，营养全面', ingredients: ['鸡腿', '核桃', '红枣', '枸杞', '姜片'], nutrition: { cal: '380kcal', protein: '24g', iron: '高' } },
+      { name: '清炒虾仁西芹', desc: '虾仁高蛋白低脂肪，西芹降压补纤维，清淡健康', ingredients: ['虾仁', '西芹', '百合', '腰果', '蒜末'], nutrition: { cal: '280kcal', protein: '24g', fiber: '高' } },
+      { name: '紫菜蛋花汤配杂粮饭', desc: '紫菜补碘补铁，蛋花补蛋白，简单营养的晚餐', ingredients: ['紫菜', '鸡蛋', '虾皮', '杂粮米', '香油'], nutrition: { cal: '340kcal', protein: '14g', iodine: '高' } },
+      { name: '山药枸杞乌鸡汤', desc: '乌鸡补铁补气血，山药健脾，枸杞明目，适合孕晚期滋补', ingredients: ['乌鸡', '山药', '枸杞', '红枣', '姜片'], nutrition: { cal: '360kcal', protein: '28g', iron: '高' } },
+    ],
+    snack: [
+      { name: '牛奶芝麻糊', desc: '牛奶补钙，芝麻补铁补钙，为分娩储备能量', ingredients: ['牛奶', '黑芝麻', '糯米粉', '冰糖'], nutrition: { cal: '200kcal', protein: '8g', calcium: '高' } },
+      { name: '红枣花生汤', desc: '红枣花生补血，产后恢复和泌乳的好帮手', ingredients: ['红枣', '花生', '红糖', '鸡蛋'], nutrition: { cal: '180kcal', protein: '6g', iron: '高' } },
+      { name: '酸奶坚果拌水果', desc: '酸奶补钙补益生菌，坚果补优质脂肪，水果补VC', ingredients: ['酸奶', '核桃', '杏仁', '香蕉', '草莓'], nutrition: { cal: '220kcal', protein: '8g', calcium: '高' } },
+    ]
+  }
+};
+
+// Pregnancy week nutrition tips
+const WEEK_NUTRITION_TIPS = {
+  early: {
+    title: '孕早期饮食要点',
+    text: '此时胎儿器官正在形成，重点是<strong>补充叶酸</strong>预防神经管畸形。孕吐期间少食多餐，选择清淡易消化的食物。避免生食、生肉和未经巴氏消毒的奶制品。'
+  },
+  mid: {
+    title: '孕中期饮食要点',
+    text: '宝宝进入快速生长期，需要增加<strong>蛋白质、钙、铁、DHA</strong>的摄入。每周吃2-3次深海鱼，每天喝牛奶或酸奶。注意控制体重增长，每周不超过0.5kg。'
+  },
+  late: {
+    title: '孕晚期饮食要点',
+    text: '宝宝长肉期，但妈妈活动量减少，<strong>控制总热量避免过度增重</strong>。继续补钙补铁，适当减少盐分摄入预防水肿。可以开始吃一些有助于泌乳的食物如鲫鱼汤。'
+  }
+};
+
+let recipeSeed = 0;
+
+function getTrimester(week) {
+  if (week < 13) return 'early';
+  if (week < 28) return 'mid';
+  return 'late';
+}
+
+function seededRandom(seed) {
+  const x = Math.sin(seed * 9301 + 49297) * 49297;
+  return x - Math.floor(x);
+}
+
+function pickRecipe(meals, seed) {
+  const idx = Math.floor(seededRandom(seed) * meals.length);
+  return meals[idx];
+}
+
+function refreshRecipes() {
+  recipeSeed = Math.floor(Math.random() * 10000);
+  renderRecipes();
+}
+
+function renderRecipes() {
+  const displayWeek = Math.min(Math.max(currentWeek, 4), 40);
+  const trimester = getTrimester(displayWeek);
+  const meals = RECIPES[trimester];
+
+  // Date badge
+  const today = new Date();
+  const month = today.getMonth() + 1;
+  const day = today.getDate();
+  const weekDay = ['周日','周一','周二','周三','周四','周五','周六'][today.getDay()];
+  document.getElementById('recipeDateBadge').innerHTML = `📅 ${month}月${day}日 ${weekDay}`;
+
+  // Week hint
+  document.getElementById('recipeWeekHint').textContent = `第${displayWeek}周 · ${trimester === 'early' ? '孕早期' : trimester === 'mid' ? '孕中期' : '孕晚期'}精选推荐`;
+
+  const container = document.getElementById('recipeContent');
+
+  const mealTypes = [
+    { key: 'breakfast', label: '早餐', tagClass: 'meal-breakfast', emoji: '🌅' },
+    { key: 'lunch', label: '午餐', tagClass: 'meal-lunch', emoji: '☀️' },
+    { key: 'dinner', label: '晚餐', tagClass: 'meal-dinner', emoji: '🌙' },
+    { key: 'snack', label: '加餐', tagClass: 'meal-snack', emoji: '🍪' },
+  ];
+
+  let html = '';
+  mealTypes.forEach((meal, i) => {
+    const recipe = pickRecipe(meals[meal.key], recipeSeed + i * 137 + displayWeek * 7);
+    const nutHtml = recipe.nutrition ? Object.entries(recipe.nutrition).map(([k, v]) => {
+      const labels = { cal: '热量', protein: '蛋白质', folate: '叶酸', iron: '铁', calcium: '钙', DHA: 'DHA', VC: '维C', VA: '维A', VB: '维B', fiber: '纤维', iodine: '碘', zinc: '锌', VE: '维E', collagen: '胶原' };
+      return `<div class="nut-item">${labels[k] || k}: <span>${v}</span></div>`;
+    }).join('') : '';
+
+    html += `
+      <div class="recipe-card">
+        <div class="recipe-header">
+          <div>
+            <div class="recipe-name">${meal.emoji} ${recipe.name}</div>
+            <div class="recipe-desc">${recipe.desc}</div>
+          </div>
+          <span class="meal-tag ${meal.tagClass}">${meal.label}</span>
+        </div>
+        <div class="recipe-ingredients">
+          ${recipe.ingredients.map(ing => `<span class="ingredient">${ing}</span>`).join('')}
+        </div>
+        ${nutHtml ? `<div class="recipe-nutrition-bar">${nutHtml}</div>` : ''}
+      </div>
+    `;
+  });
+
+  // Nutrition tip for this trimester
+  const tip = WEEK_NUTRITION_TIPS[trimester];
+  html += `
+    <div class="recipe-week-tip">
+      <h4>💡 ${tip.title}</h4>
+      <p>${tip.text}</p>
+    </div>
+  `;
+
+  container.innerHTML = html;
+}
+
+function switchPage(page, btn) {
+  document.querySelectorAll('.page-view').forEach(p => p.classList.remove('active'));
+  document.getElementById('page' + page).classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  btn.classList.add('active');
+
+  // Render recipes when switching to recipe page
+  if (page === 'Recipe') {
+    renderRecipes();
+  }
+}
+
+// Weight tracking
+function addWeight() {
+  const input = document.getElementById('weightInput');
+  const val = parseFloat(input.value);
+  if (isNaN(val) || val <= 0) return;
+
+  const record = {
+    date: new Date().toISOString(),
+    week: currentWeek,
+    weight: val
+  };
+
+  weightRecords.push(record);
+  localStorage.setItem('pregnancy_weights', JSON.stringify(weightRecords));
+  input.value = '';
+  renderWeightLog();
+  saveToFirebase();
+}
+
+function renderWeightLog() {
+  const container = document.getElementById('weightLog');
+  if (weightRecords.length === 0) {
+    container.innerHTML = '<p style="color: var(--text-light); font-size: 13px; text-align: center; padding: 16px;">还没有记录，开始记录体重变化吧</p>';
+    return;
+  }
+
+  // Show recent records, newest first
+  const recent = [...weightRecords].reverse().slice(0, 20);
+  container.innerHTML = recent.map((r, i) => {
+    const d = new Date(r.date);
+    const dateStr = `${d.getMonth()+1}/${d.getDate()}`;
+    const prev = i < weightRecords.length - 1 ? weightRecords[weightRecords.length - 1 - i - 1] : null;
+    let gainStr = '';
+    if (prev) {
+      const diff = r.weight - prev.weight;
+      gainStr = diff > 0 ? `+${diff.toFixed(1)}` : diff.toFixed(1);
+    }
+    return `
+      <div class="weight-entry">
+        <span class="date">第${r.week}周 · ${dateStr}</span>
+        <span class="val">${r.weight.toFixed(1)} kg</span>
+        <span class="gain">${gainStr}</span>
+      </div>
+    `;
+  }).join('');
+}
+
+// Edit modal
+function showEditModal() {
+  const modal = document.getElementById('editModal');
+  modal.classList.add('active');
+  const lmpStr = lmpDate.toISOString().split('T')[0];
+  document.getElementById('editDateInput').value = lmpStr;
+}
+
+function hideEditModal() {
+  document.getElementById('editModal').classList.remove('active');
+}
+
+function confirmEdit() {
+  const dateVal = document.getElementById('editDateInput').value;
+  if (!dateVal) return;
+  lmpDate = new Date(dateVal + 'T00:00:00');
+  eddDate = getEDD(lmpDate);
+  localStorage.setItem('pregnancy_lmp', lmpDate.toISOString());
+  localStorage.setItem('pregnancy_edd', eddDate.toISOString());
+  hideEditModal();
+  updateUI();
+  saveToFirebase();
+}
+
+// Init - check saved data
+function init() {
+  const savedLmp = localStorage.getItem('pregnancy_lmp');
+  if (savedLmp) {
+    lmpDate = new Date(savedLmp);
+    eddDate = new Date(localStorage.getItem('pregnancy_edd'));
+    document.getElementById('setupScreen').style.display = 'none';
+    document.getElementById('mainApp').classList.add('active');
+    updateUI();
+  }
+
+  // Auto-reconnect to room if previously joined
+  if (roomCode && firebaseDb) {
+    startListening();
+  }
+
+  // Render sync section on setup page
+  updateSyncUI();
+}
+
+init();
+</script>
+
+</body>
+</html>
