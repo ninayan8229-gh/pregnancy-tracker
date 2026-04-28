@@ -1894,7 +1894,14 @@ function isChecked(key) {
 
 function getItemImages(key) {
   const v = checkedItems[key];
-  if (v && typeof v === 'object' && Array.isArray(v.images)) return v.images;
+  if (v && typeof v === 'object' && Array.isArray(v.images)) {
+    // Normalize: support both old {url} and new {data} format
+    return v.images.map(img => {
+      if (img && img.data) return img;
+      if (img && img.url) return { data: img.url, uploadedAt: img.uploadedAt || Date.now() };
+      return img;
+    });
+  }
   return [];
 }
 
@@ -1964,6 +1971,7 @@ function handleImageUpload(checkupKey) {
       };
       items[checkupKey].images.push({
         data: base64,
+        url: base64,  // Backward compat: old code reads img.url
         uploadedAt: Date.now()
       });
       localStorage.setItem('pregnancy_checks', JSON.stringify(items));
