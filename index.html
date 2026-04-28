@@ -1826,12 +1826,50 @@ function renderSyncSection() {
   html += '<button class="sync-btn sync-join-btn" onclick="showJoinDialog()">+ 加入房间</button>';
   html += '</div></div>';
 
+  // Reset button
+  html += '<div class="sync-card" style="margin-top:12px;">';
+  html += '<div class="sync-title">🗑️ 数据管理</div>';
+  html += '<p style="font-size:12px;color:var(--text-light);margin:6px 0 10px;">清除所有本地数据并重新开始</p>';
+  html += '<button class="sync-btn" style="background:#fee2e2;color:#dc2626;border-color:#fca5a5;" onclick="resetAllData()">重置所有数据</button>';
+  html += '</div>';
+
   container.innerHTML = html;
 }
 
 function showJoinDialog() {
   const code = prompt('请输入6位房间码：');
   if (code) joinRoom(code);
+}
+
+function resetAllData() {
+  if (!confirm('确定要清除所有数据并重新开始吗？\n\n这会清除：\n· 孕期日期设置\n· 产检记录和图片\n· 体重记录\n· 房间信息\n\n此操作不可恢复！')) return;
+  if (!confirm('再次确认：真的要全部清空吗？')) return;
+
+  // Stop sync listener
+  if (syncListener) {
+    firebaseDb.ref('rooms/' + currentRoomCode + '/members/' + roomCode).remove();
+    syncListener();
+    syncListener = null;
+  }
+
+  // Clear all localStorage
+  const keys = Object.keys(localStorage);
+  keys.forEach(k => {
+    if (k.startsWith('pregnancy_')) localStorage.removeItem(k);
+  });
+
+  // Reset state
+  myRooms = [];
+  currentRoomCode = null;
+  roomCode = null;
+  isOnline = false;
+  lmpDate = null;
+  eddDate = null;
+  checkedItems = {};
+  weights = [];
+
+  // Reload page
+  location.reload();
 }
 
 // ========== Checkup Image Functions ==========
