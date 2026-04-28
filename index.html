@@ -1084,6 +1084,115 @@
 
   .room-leave-btn:hover { color: #E74C3C; }
 
+  /* Checkup image styles */
+  .checklist-item {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .checkup-left {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    flex: 1;
+  }
+
+  .checkup-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+
+  .checkup-camera-btn {
+    background: none;
+    border: 2px dashed var(--pink-200);
+    border-radius: 12px;
+    padding: 6px 10px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: all 0.2s;
+    line-height: 1;
+  }
+
+  .checkup-camera-btn:hover {
+    border-color: var(--pink-400);
+    background: var(--pink-light);
+  }
+
+  .checkup-images {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 4px;
+    padding-left: 36px;
+  }
+
+  .checkup-thumb {
+    width: 56px;
+    height: 56px;
+    object-fit: cover;
+    border-radius: 8px;
+    cursor: pointer;
+    border: 2px solid var(--pink-100);
+    transition: all 0.2s;
+  }
+
+  .checkup-thumb:hover {
+    border-color: var(--pink-400);
+    transform: scale(1.05);
+  }
+
+  /* Image preview overlay */
+  .image-preview-overlay {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.85);
+    z-index: 10000;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    animation: fadeIn 0.2s;
+  }
+
+  .image-preview-header {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    display: flex;
+    gap: 12px;
+    z-index: 10001;
+  }
+
+  .image-preview-close, .image-preview-delete {
+    background: rgba(255,255,255,0.2);
+    border: none;
+    color: #fff;
+    padding: 10px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    cursor: pointer;
+    font-family: inherit;
+    backdrop-filter: blur(4px);
+  }
+
+  .image-preview-close:hover { background: rgba(255,255,255,0.3); }
+  .image-preview-delete:hover { background: rgba(231,76,60,0.7); }
+
+  .image-preview-img {
+    max-width: 95%;
+    max-height: 85vh;
+    object-fit: contain;
+    border-radius: 8px;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
   #syncBadge {
     font-size: 11px;
     margin-left: auto;
@@ -1297,6 +1406,7 @@
 
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
 <script>
 // Firebase Config - 替换为你自己的配置
 const firebaseConfig = {
@@ -1312,6 +1422,7 @@ const firebaseConfig = {
 // Firebase state
 let firebaseApp = null;
 let firebaseDb = null;
+let firebaseStorage = null;
 let myRooms = JSON.parse(localStorage.getItem('pregnancy_rooms') || '[]'); // [{code, name, role:'owner'|'guest'}]
 let currentRoomCode = localStorage.getItem('pregnancy_current_room') || null;
 let syncListener = null;
@@ -1330,6 +1441,7 @@ function initFirebase() {
   try {
     firebaseApp = firebase.initializeApp(firebaseConfig);
     firebaseDb = firebase.database();
+    firebaseStorage = firebase.storage();
     firebaseDb.ref('.info/connected').on('value', (snap) => {
       isOnline = snap.val() === true;
       updateSyncUI();
@@ -1647,6 +1759,159 @@ function renderSyncSection() {
 function showJoinDialog() {
   const code = prompt('请输入6位房间码：');
   if (code) joinRoom(code);
+}
+
+// ========== Checkup Image Functions ==========
+
+// Compat: old format true/false vs new {checked, images:[...]}
+function isChecked(key) {
+  const v = checkedItems[key];
+  if (v === undefined || v === null || v === false) return false;
+  if (v === true || v.checked === true) return true;
+  return false;
+}
+
+function getItemImages(key) {
+  const v = checkedItems[key];
+  if (v && typeof v === 'object' && Array.isArray(v.images)) return v.images;
+  return [];
+}
+
+function migrateCheckedItem(key, checked) {
+  // Convert old true/false to new object format
+  const v = checkedItems[key];
+  if (typeof v === 'object' && v !== null) {
+    v.checked = checked;
+    checkedItems[key] = v;
+  } else {
+    checkedItems[key] = { checked: checked, images: [] };
+  }
+}
+
+function compressImage(file, maxWidth, quality) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        let w = img.width, h = img.height;
+        if (w > maxWidth) {
+          h = Math.round(h * maxWidth / w);
+          w = maxWidth;
+        }
+        canvas.width = w;
+        canvas.height = h;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, w, h);
+        canvas.toBlob((blob) => {
+          if (blob) resolve(blob);
+          else reject(new Error('Compress failed'));
+        }, 'image/jpeg', quality);
+      };
+      img.onerror = reject;
+      img.src = e.target.result;
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+function handleImageUpload(checkupKey) {
+  if (!firebaseStorage || !currentRoomCode) {
+    alert('请先加入或创建房间再上传图片');
+    return;
+  }
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = 'image/*';
+  input.onchange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    if (file.size > 20 * 1024 * 1024) {
+      alert('图片不能超过 20MB');
+      return;
+    }
+    try {
+      showSyncToast('正在上传...');
+      const compressed = await compressImage(file, 1200, 0.7);
+      const fileName = Date.now() + '_' + Math.random().toString(36).substr(2, 6) + '.jpg';
+      const ref = firebaseStorage.ref('rooms/' + currentRoomCode + '/' + checkupKey + '/' + fileName);
+      await ref.put(compressed);
+      const url = await ref.getDownloadURL();
+
+      // Save to checkedItems
+      if (!checkedItems[checkupKey] || typeof checkedItems[checkupKey] !== 'object') {
+        checkedItems[checkupKey] = { checked: isChecked(checkupKey), images: [] };
+      }
+      checkedItems[checkupKey].images.push({
+        url: url,
+        path: ref.fullPath,
+        uploadedAt: Date.now()
+      });
+      localStorage.setItem('pregnancy_checks', JSON.stringify(checkedItems));
+      await saveToFirebase();
+      updateUI();
+      showSyncToast('图片上传成功！');
+    } catch (err) {
+      console.error('Upload failed:', err);
+      if (err.code === 'storage/unauthorized') {
+        alert('存储权限不足，请在 Firebase 控制台开启 Storage 服务');
+      } else {
+        alert('上传失败：' + err.message);
+      }
+    }
+  };
+  input.click();
+}
+
+async function deleteImage(checkupKey, imageIndex) {
+  if (!confirm('确定删除这张图片吗？')) return;
+  try {
+    const item = checkedItems[checkupKey];
+    if (!item || !item.images || !item.images[imageIndex]) return;
+    const imgData = item.images[imageIndex];
+
+    // Delete from Storage
+    if (firebaseStorage && imgData.path) {
+      try {
+        await firebaseStorage.ref(imgData.path).delete();
+      } catch (e) {
+        console.warn('Storage delete failed (may already be deleted):', e);
+      }
+    }
+
+    // Remove from local data
+    item.images.splice(imageIndex, 1);
+    localStorage.setItem('pregnancy_checks', JSON.stringify(checkedItems));
+    await saveToFirebase();
+    updateUI();
+    closePreview();
+    showSyncToast('图片已删除');
+  } catch (err) {
+    alert('删除失败：' + err.message);
+  }
+}
+
+function previewImage(url, checkupKey, imageIndex) {
+  // Remove existing preview if any
+  closePreview();
+  const overlay = document.createElement('div');
+  overlay.className = 'image-preview-overlay';
+  overlay.id = 'imagePreviewOverlay';
+  overlay.innerHTML = `
+    <div class="image-preview-header">
+      <button class="image-preview-close" onclick="closePreview()">✕</button>
+      ${checkupKey && imageIndex !== undefined ? '<button class="image-preview-delete" onclick="deleteImage(\'' + checkupKey + '\', ' + imageIndex + ')">🗑️ 删除</button>' : ''}
+    </div>
+    <img src="${url}" class="image-preview-img" onclick="closePreview()">
+  `;
+  document.body.appendChild(overlay);
+}
+
+function closePreview() {
+  const overlay = document.getElementById('imagePreviewOverlay');
+  if (overlay) overlay.remove();
 }
 
 // Init Firebase
@@ -2203,22 +2468,37 @@ function renderCheckup(week, data) {
   }
 
   container.innerHTML = allCheckups.map(item => {
-    const checked = checkedItems[item.key];
+    const checked = isChecked(item.key);
+    const images = getItemImages(item.key);
+    let imagesHtml = '';
+    if (images.length > 0) {
+      imagesHtml = '<div class="checkup-images">';
+      images.forEach((img, idx) => {
+        imagesHtml += `<img src="${img.url}" class="checkup-thumb" onclick="previewImage('${img.url}', '${item.key}', ${idx})" alt="产检图片">`;
+      });
+      imagesHtml += '</div>';
+    }
     return `
       <div class="checklist-item">
-        <input type="checkbox" ${checked ? 'checked' : ''} onchange="toggleCheck('${item.key}', this.checked)">
-        <div class="check-content ${checked ? 'checked' : ''}">
-          <h4>第${item.week}周 · ${item.name}</h4>
-          <p>${item.desc}</p>
+        <div class="checkup-left">
+          <input type="checkbox" ${checked ? 'checked' : ''} onchange="toggleCheck('${item.key}', this.checked)">
+          <div class="check-content ${checked ? 'checked' : ''}">
+            <h4>第${item.week}周 · ${item.name}</h4>
+            <p>${item.desc}</p>
+          </div>
         </div>
-        <span class="check-tag tag-${item.tag}">${item.tag === 'important' ? '必做' : item.tag === 'normal' ? '常规' : '可选'}</span>
+        <div class="checkup-right">
+          <span class="check-tag tag-${item.tag}">${item.tag === 'important' ? '必做' : item.tag === 'normal' ? '常规' : '可选'}</span>
+          <button class="checkup-camera-btn" onclick="handleImageUpload('${item.key}')" title="上传产检图片">📷</button>
+        </div>
+        ${imagesHtml}
       </div>
     `;
   }).join('');
 }
 
 function toggleCheck(key, checked) {
-  checkedItems[key] = checked;
+  migrateCheckedItem(key, checked);
   localStorage.setItem('pregnancy_checks', JSON.stringify(checkedItems));
   updateUI();
   saveToFirebase();
