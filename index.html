@@ -1188,89 +1188,61 @@
     border-radius: 8px;
   }
 
-  /* Room onboarding modal */
-  .room-onboarding-overlay {
-    position: fixed;
-    top: 0; left: 0; right: 0; bottom: 0;
-    background: rgba(0,0,0,0.45);
-    z-index: 9000;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 20px;
-    animation: fadeIn 0.3s;
-  }
-  .room-onboarding-card {
-    background: #fff;
-    border-radius: 20px;
-    padding: 28px 24px;
-    max-width: 340px;
-    width: 100%;
+  /* Home room card (inline onboarding) */
+  .home-room-card {
+    background: linear-gradient(135deg, #fdf2f8, #fce7f3, #f3e8ff);
+    border-radius: 16px;
+    padding: 24px 20px;
     text-align: center;
-    box-shadow: 0 12px 40px rgba(0,0,0,0.15);
+    border: 1.5px solid var(--pink-200);
   }
-  .room-onboarding-card .onboarding-icon {
-    font-size: 48px;
-    margin-bottom: 12px;
+  .home-room-card .home-room-icon {
+    font-size: 40px;
+    margin-bottom: 8px;
   }
-  .room-onboarding-card h3 {
-    font-size: 18px;
+  .home-room-card h3 {
+    font-size: 16px;
     font-weight: 700;
     color: var(--text-primary);
-    margin: 0 0 8px;
+    margin: 0 0 6px;
   }
-  .room-onboarding-card p {
+  .home-room-card p {
     font-size: 13px;
     color: var(--text-secondary);
-    line-height: 1.6;
-    margin: 0 0 20px;
+    margin: 0 0 16px;
+    line-height: 1.5;
   }
-  .onboarding-btns {
+  .home-room-btns {
     display: flex;
-    flex-direction: column;
     gap: 10px;
   }
-  .onboarding-btn {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    padding: 12px 16px;
-    border-radius: 14px;
-    font-size: 15px;
+  .home-room-btn {
+    flex: 1;
+    padding: 10px 14px;
+    border-radius: 12px;
+    font-size: 14px;
     font-weight: 600;
     cursor: pointer;
     border: none;
     font-family: inherit;
     transition: all 0.2s;
   }
-  .onboarding-btn-primary {
+  .home-room-create {
     background: linear-gradient(135deg, var(--pink-400), var(--pink-500));
     color: #fff;
   }
-  .onboarding-btn-primary:hover {
+  .home-room-create:hover {
     transform: translateY(-1px);
-    box-shadow: 0 4px 14px rgba(236, 72, 153, 0.35);
+    box-shadow: 0 4px 12px rgba(236, 72, 153, 0.3);
   }
-  .onboarding-btn-secondary {
-    background: var(--pink-light);
+  .home-room-join {
+    background: #fff;
     color: var(--pink-600);
     border: 1.5px solid var(--pink-200);
   }
-  .onboarding-btn-secondary:hover {
-    background: #fce7f3;
+  .home-room-join:hover {
+    background: #fff0f6;
   }
-  .onboarding-skip {
-    margin-top: 14px;
-    background: none;
-    border: none;
-    color: var(--text-light);
-    font-size: 13px;
-    cursor: pointer;
-    font-family: inherit;
-    padding: 4px;
-  }
-  .onboarding-skip:hover { color: var(--text-secondary); }
 
   @keyframes fadeIn {
     from { opacity: 0; }
@@ -1375,6 +1347,19 @@
 
   <!-- Page: Home -->
   <div class="page-view active" id="pageHome">
+    <!-- Room onboarding card (shown when no room joined) -->
+    <div class="section animate-in" id="homeRoomCard" style="display:none">
+      <div class="home-room-card">
+        <div class="home-room-icon">👨‍👩‍👧</div>
+        <h3>与家人一起记录孕期时光</h3>
+        <p>创建或加入房间后，可与老公/家人实时同步数据</p>
+        <div class="home-room-btns">
+          <button class="home-room-btn home-room-create" onclick="createRoom()">🏠 创建房间</button>
+          <button class="home-room-btn home-room-join" onclick="showJoinDialog()">🔗 加入房间</button>
+        </div>
+      </div>
+    </div>
+
     <!-- Current Week Development -->
     <div class="section animate-in">
       <div class="section-title"><span class="icon">👶</span> 宝宝本周发育</div>
@@ -1780,6 +1765,13 @@ function updateSyncUI() {
       badge.innerHTML = '<span class="sync-wait">⏳ 连接中...</span>';
     }
   }
+
+  // Show/hide home room card
+  const homeCard = document.getElementById('homeRoomCard');
+  if (homeCard) {
+    homeCard.style.display = (myRooms.length === 0 && firebaseDb) ? 'block' : 'none';
+  }
+
   renderSyncSection();
 }
 
@@ -1840,31 +1832,6 @@ function renderSyncSection() {
 function showJoinDialog() {
   const code = prompt('请输入6位房间码：');
   if (code) joinRoom(code);
-}
-
-function showRoomOnboarding() {
-  closeRoomOnboarding();
-  const overlay = document.createElement('div');
-  overlay.className = 'room-onboarding-overlay';
-  overlay.id = 'roomOnboardingOverlay';
-  overlay.innerHTML = `
-    <div class="room-onboarding-card">
-      <div class="onboarding-icon">👨‍👩‍👧</div>
-      <h3>与家人一起记录</h3>
-      <p>创建或加入房间后，你可以和老公/家人实时同步孕期数据，一起见证宝宝的成长 ✨</p>
-      <div class="onboarding-btns">
-        <button class="onboarding-btn onboarding-btn-primary" onclick="closeRoomOnboarding();createRoom()">🏠 创建房间</button>
-        <button class="onboarding-btn onboarding-btn-secondary" onclick="closeRoomOnboarding();showJoinDialog()">🔗 加入房间</button>
-      </div>
-      <button class="onboarding-skip" onclick="closeRoomOnboarding()">以后再说</button>
-    </div>
-  `;
-  document.body.appendChild(overlay);
-}
-
-function closeRoomOnboarding() {
-  const overlay = document.getElementById('roomOnboardingOverlay');
-  if (overlay) overlay.remove();
 }
 
 // ========== Checkup Image Functions ==========
@@ -2447,13 +2414,6 @@ function startApp() {
   // Sync to Firebase
   saveToFirebase();
   if (roomCode && !syncListener) startListening();
-
-  // Show room onboarding for first-time users
-  setTimeout(() => {
-    if (myRooms.length === 0 && firebaseDb) {
-      showRoomOnboarding();
-    }
-  }, 600);
 }
 
 function updateUI() {
