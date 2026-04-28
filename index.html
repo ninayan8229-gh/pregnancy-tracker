@@ -1728,6 +1728,24 @@ function startListening() {
     }
     showSyncToast('数据已同步');
   });
+
+  // Listen for room name from Firebase and update local record
+  // Also: if we are the owner, push our local room name to Firebase (backward compat)
+  firebaseDb.ref('rooms/' + currentRoomCode + '/meta/roomName').once('value').then(snap => {
+    const fbName = snap.val();
+    const room = myRooms.find(r => r.code === currentRoomCode);
+    if (!room) return;
+
+    if (!fbName && room.name) {
+      // Firebase has no name yet (old room) — push our local name
+      firebaseDb.ref('rooms/' + currentRoomCode + '/meta/roomName').set(room.name);
+    } else if (fbName && room.name !== fbName) {
+      // Firebase has a name different from local — sync to local
+      room.name = fbName;
+      saveRooms();
+      updateSyncUI();
+    }
+  });
 }
 
 async function saveToFirebase() {
