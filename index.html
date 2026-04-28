@@ -1540,6 +1540,8 @@ async function createRoom() {
   myRooms.push({ code, name: name.trim(), role: 'owner' });
   currentRoomCode = code;
   saveRooms();
+  // 把房间名存到 Firebase，让加入的人能自动获取
+  await firebaseDb.ref('rooms/' + code + '/meta/roomName').set(name.trim());
   await saveToFirebase();
   startListening();
   updateSyncUI();
@@ -1560,12 +1562,15 @@ async function joinRoom(code) {
     alert('你已经加入过这个房间了');
     return;
   }
-  const name = prompt('给这个房间起个名字（如"闺蜜小美"）：');
-  if (!name || !name.trim()) return;
 
   try {
+    // 先读取房间信息，获取房间名
+    const metaSnap = await firebaseDb.ref('rooms/' + cleanCode + '/meta/roomName').once('value');
+    const existingName = metaSnap.val();
+    const name = existingName || ('房间 ' + cleanCode);
+
     const snap = await firebaseDb.ref('rooms/' + cleanCode + '/data').once('value');
-    myRooms.push({ code: cleanCode, name: name.trim(), role: 'guest' });
+    myRooms.push({ code: cleanCode, name: name, role: 'guest' });
     currentRoomCode = cleanCode;
     saveRooms();
 
@@ -1945,7 +1950,7 @@ function handleImageUpload(checkupKey) {
     }
     try {
       showSyncToast('正在压缩图片...');
-      const base64 = await compressImage(file, 1200, 0.7);
+      const base64 = await compressImage(file, 800, 0.5);
 
       // Directly read, modify, write localStorage (no global variable dependency)
       const raw = localStorage.getItem('pregnancy_checks') || '{}';
@@ -2583,12 +2588,11 @@ function renderCheckup(week, data) {
   container.innerHTML = allCheckups.map(item => {
     const checked = isChecked(item.key);
     const images = getItemImages(item.key);
-    console.log('[renderCheckup]', item.key, 'images:', images.length);
     let imagesHtml = '';
     if (images.length > 0) {
       imagesHtml = '<div class="checkup-images">';
       images.forEach((img, idx) => {
-        imagesHtml += `<img src="${img.data}" class="checkup-thumb" data-checkup-key="${item.key}" data-img-index="${idx}" alt="产检图片">`;
+        imagesHtml += `<img class="checkup-thumb" data-checkup-key="${item.key}" data-img-index="${idx}" alt="产检图片" style="background:#f0e6ff;">`;
       });
       imagesHtml += '</div>';
     }
@@ -2609,6 +2613,26 @@ function renderCheckup(week, data) {
       </div>
     `;
   }).join('');
+
+  // Set Base64 src via DOM to avoid innerHTML parsing issues with large data URIs
+  container.querySelectorAll('.checkup-thumb').forEach(imgEl => {
+    const key = imgEl.getAttribute('data-checkup-key');
+    const imgIdx = parseInt(imgEl.getAttribute('data-img-index'), 10);
+    const images = getItemImages(key);
+    if (images[imgIdx]) {
+      imgEl.src = images[imgIdx].data;
+      imgEl.onerror = function() {
+        this.style.width = '56px';
+        this.style.height = '56px';
+        this.style.display = 'flex';
+        this.style.alignItems = 'center';
+        this.style.justifyContent = 'center';
+        this.style.background = '#fee2e2';
+        this.alt = '加载失败';
+        this.src = '';
+      };
+    }
+  });
 }
 
 function toggleCheck(key, checked) {
