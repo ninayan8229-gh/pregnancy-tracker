@@ -1406,7 +1406,6 @@
 
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
 <script>
 // Firebase Config - 替换为你自己的配置
 const firebaseConfig = {
@@ -1422,7 +1421,6 @@ const firebaseConfig = {
 // Firebase state
 let firebaseApp = null;
 let firebaseDb = null;
-let firebaseStorage = null;
 let myRooms = JSON.parse(localStorage.getItem('pregnancy_rooms') || '[]'); // [{code, name, role:'owner'|'guest'}]
 let currentRoomCode = localStorage.getItem('pregnancy_current_room') || null;
 let syncListener = null;
@@ -1441,7 +1439,6 @@ function initFirebase() {
   try {
     firebaseApp = firebase.initializeApp(firebaseConfig);
     firebaseDb = firebase.database();
-    firebaseStorage = firebase.storage();
     firebaseDb.ref('.info/connected').on('value', (snap) => {
       isOnline = snap.val() === true;
       updateSyncUI();
@@ -1804,10 +1801,7 @@ function compressImage(file, maxWidth, quality) {
         canvas.height = h;
         const ctx = canvas.getContext('2d');
         ctx.drawImage(img, 0, 0, w, h);
-        canvas.toBlob((blob) => {
-          if (blob) resolve(blob);
-          else reject(new Error('Compress failed'));
-        }, 'image/jpeg', quality);
+        resolve(canvas.toDataURL('image/jpeg', quality));
       };
       img.onerror = reject;
       img.src = e.target.result;
@@ -1818,7 +1812,7 @@ function compressImage(file, maxWidth, quality) {
 }
 
 function handleImageUpload(checkupKey) {
-  if (!firebaseStorage || !currentRoomCode) {
+  if (!currentRoomCode) {
     alert('请先加入或创建房间再上传图片');
     return;
   }
@@ -1833,20 +1827,15 @@ function handleImageUpload(checkupKey) {
       return;
     }
     try {
-      showSyncToast('正在上传...');
-      const compressed = await compressImage(file, 1200, 0.7);
-      const fileName = Date.now() + '_' + Math.random().toString(36).substr(2, 6) + '.jpg';
-      const ref = firebaseStorage.ref('rooms/' + currentRoomCode + '/' + checkupKey + '/' + fileName);
-      await ref.put(compressed);
-      const url = await ref.getDownloadURL();
+      showSyncToast('正在处理图片...');
+      const base64 = await compressImage(file, 1200, 0.7);
 
-      // Save to checkedItems
+      // Save to checkedItems as Base64
       if (!checkedItems[checkupKey] || typeof checkedItems[checkupKey] !== 'object') {
         checkedItems[checkupKey] = { checked: isChecked(checkupKey), images: [] };
       }
       checkedItems[checkupKey].images.push({
-        url: url,
-        path: ref.fullPath,
+        data: base64,
         uploadedAt: Date.now()
       });
       localStorage.setItem('pregnancy_checks', JSON.stringify(checkedItems));
@@ -1855,11 +1844,7 @@ function handleImageUpload(checkupKey) {
       showSyncToast('图片上传成功！');
     } catch (err) {
       console.error('Upload failed:', err);
-      if (err.code === 'storage/unauthorized') {
-        alert('存储权限不足，请在 Firebase 控制台开启 Storage 服务');
-      } else {
-        alert('上传失败：' + err.message);
-      }
+      alert('上传失败：' + err.message);
     }
   };
   input.click();
@@ -1870,16 +1855,6 @@ async function deleteImage(checkupKey, imageIndex) {
   try {
     const item = checkedItems[checkupKey];
     if (!item || !item.images || !item.images[imageIndex]) return;
-    const imgData = item.images[imageIndex];
-
-    // Delete from Storage
-    if (firebaseStorage && imgData.path) {
-      try {
-        await firebaseStorage.ref(imgData.path).delete();
-      } catch (e) {
-        console.warn('Storage delete failed (may already be deleted):', e);
-      }
-    }
 
     // Remove from local data
     item.images.splice(imageIndex, 1);
@@ -2474,7 +2449,7 @@ function renderCheckup(week, data) {
     if (images.length > 0) {
       imagesHtml = '<div class="checkup-images">';
       images.forEach((img, idx) => {
-        imagesHtml += `<img src="${img.url}" class="checkup-thumb" onclick="previewImage('${img.url}', '${item.key}', ${idx})" alt="产检图片">`;
+        imagesHtml += `<img src="${img.data}" class="checkup-thumb" onclick="previewImage('${img.data}', '${item.key}', ${idx})" alt="产检图片">`;
       });
       imagesHtml += '</div>';
     }
