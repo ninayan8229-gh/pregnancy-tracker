@@ -1768,7 +1768,8 @@ function updateSyncUI() {
     if (!currentRoomCode || !room) {
       badge.innerHTML = '<span class="sync-off">☁️ 未同步</span>';
     } else if (isOnline) {
-      badge.innerHTML = '<span class="sync-on" onclick="copyRoomCode()" title="点击复制房间码">☁️ ' + room.name + '</span>';
+      const roomName = room.name || room.code || '未命名房间';
+      badge.innerHTML = '<span class="sync-on" onclick="copyRoomCode()" title="点击复制房间码">☁️ ' + roomName + '</span>';
     } else {
       badge.innerHTML = '<span class="sync-wait">⏳ 连接中...</span>';
     }
@@ -1813,9 +1814,10 @@ function renderSyncSection() {
     html += '<div class="room-list">';
     myRooms.forEach(room => {
       const isActive = room.code === currentRoomCode;
+      const rName = room.name || room.code || '未命名房间';
       html += '<div class="room-item' + (isActive ? ' room-active' : '') + '" onclick="switchRoom(\'' + room.code + '\')">';
       html += '<div class="room-item-info">';
-      html += '<span class="room-item-name">' + room.name + '</span>';
+      html += '<span class="room-item-name">' + rName + '</span>';
       html += '<span class="room-item-code">' + room.code + '</span>';
       html += '</div>';
       html += '<div class="room-item-actions">';
@@ -2588,6 +2590,10 @@ function renderCheckup(week, data) {
   container.innerHTML = allCheckups.map(item => {
     const checked = isChecked(item.key);
     const images = getItemImages(item.key);
+    const weekStr = item.week != null ? item.week : '';
+    const nameStr = item.name || '未知检查';
+    const descStr = item.desc || '';
+    const tagStr = item.tag || 'normal';
     let imagesHtml = '';
     if (images.length > 0) {
       imagesHtml = '<div class="checkup-images">';
@@ -2601,12 +2607,12 @@ function renderCheckup(week, data) {
         <div class="checkup-left">
           <input type="checkbox" ${checked ? 'checked' : ''} onchange="toggleCheck('${item.key}', this.checked)">
           <div class="check-content ${checked ? 'checked' : ''}">
-            <h4>第${item.week}周 · ${item.name}</h4>
-            <p>${item.desc}</p>
+            <h4>第${weekStr}周 · ${nameStr}</h4>
+            <p>${descStr}</p>
           </div>
         </div>
         <div class="checkup-right">
-          <span class="check-tag tag-${item.tag}">${item.tag === 'important' ? '必做' : item.tag === 'normal' ? '常规' : '可选'}</span>
+          <span class="check-tag tag-${tagStr}">${tagStr === 'important' ? '必做' : tagStr === 'normal' ? '常规' : '可选'}</span>
           <button class="checkup-camera-btn" onclick="handleImageUpload('${item.key}')" title="上传产检图片">📷</button>
         </div>
         ${imagesHtml}
