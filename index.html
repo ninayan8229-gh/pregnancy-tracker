@@ -418,41 +418,60 @@
 
   .dev-card:last-child { margin-bottom: 0; }
 
-  /* Timeline Navigation */
-  .timeline-nav {
+  /* Week Navigation (Home) */
+  .week-nav {
     display: flex;
-    gap: 8px;
+    align-items: center;
+    justify-content: space-between;
     margin: 0 16px 16px;
-    overflow-x: auto;
-    padding: 4px 0;
-    -webkit-overflow-scrolling: touch;
+    padding: 10px 16px;
+    background: var(--white);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-sm);
   }
 
-  .timeline-nav::-webkit-scrollbar { display: none; }
-
-  .timeline-btn {
-    flex-shrink: 0;
-    padding: 8px 14px;
+  .week-nav-btn {
+    padding: 6px 14px;
     border: 2px solid var(--pink-100);
     background: var(--white);
     border-radius: 20px;
-    font-size: 12px;
+    font-size: 13px;
     color: var(--text-secondary);
     cursor: pointer;
     font-family: inherit;
     transition: all 0.3s;
-    white-space: nowrap;
   }
 
-  .timeline-btn.active {
-    background: var(--pink-500);
-    border-color: var(--pink-500);
-    color: var(--white);
+  .week-nav-btn:disabled {
+    opacity: 0.3;
+    pointer-events: none;
   }
 
-  .timeline-btn:hover:not(.active) {
+  .week-nav-btn:not(:disabled):hover {
     border-color: var(--pink-300);
     color: var(--pink-500);
+  }
+
+  .week-nav-current {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--pink-500);
+  }
+
+  .week-nav-back {
+    padding: 6px 14px;
+    border: 2px solid var(--pink-200);
+    background: var(--pink-light);
+    border-radius: 20px;
+    font-size: 13px;
+    color: var(--pink-500);
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.3s;
+  }
+
+  .week-nav-back:hover {
+    background: var(--pink-200);
   }
 
   /* Checklist */
@@ -1290,7 +1309,7 @@
     .setup-card { padding: 32px 24px; }
     .progress-card { margin: -40px 12px 12px; }
     .section { margin: 12px; }
-    .timeline-nav { margin: 0 12px 12px; }
+    .week-nav { margin: 0 12px 12px; }
     .warning-banner { margin: 12px; }
   }
 </style>
@@ -1391,6 +1410,14 @@
       </div>
     </div>
 
+    <!-- Week Navigation -->
+    <div class="week-nav" id="weekNav">
+      <button class="week-nav-btn" id="prevWeekBtn" onclick="changeHomeWeek(-1)">← 上一周</button>
+      <button class="week-nav-back" id="backCurrentBtn" onclick="jumpHomeCurrent()" style="display:none">回到当前周</button>
+      <span class="week-nav-current" id="weekNavLabel">第 1 周</span>
+      <button class="week-nav-btn" id="nextWeekBtn" onclick="changeHomeWeek(1)">下一周 →</button>
+    </div>
+
     <!-- Current Week Development -->
     <div class="section animate-in">
       <div class="section-title"><span class="icon">👶</span> 宝宝本周发育</div>
@@ -1415,15 +1442,6 @@
     <div class="section animate-in">
       <div class="section-title"><span class="icon">🏥</span> 产检清单</div>
       <div id="checkupContent"></div>
-    </div>
-  </div>
-
-  <!-- Page: Timeline -->
-  <div class="page-view" id="pageTimeline">
-    <div class="timeline-nav" id="timelineNav"></div>
-    <div class="section animate-in">
-      <div class="section-title"><span class="icon">📖</span> <span id="timelineTitle">第1周</span></div>
-      <div id="timelineContent"></div>
     </div>
   </div>
 
@@ -1473,10 +1491,6 @@
     <button class="nav-item" onclick="switchPage('Recipe', this)">
       <span class="nav-icon">🍲</span>
       <span class="nav-label">菜谱</span>
-    </button>
-    <button class="nav-item" onclick="switchPage('Timeline', this)">
-      <span class="nav-icon">📅</span>
-      <span class="nav-label">时间轴</span>
     </button>
     <button class="nav-item" onclick="switchPage('Weight', this)">
       <span class="nav-icon">⚖️</span>
@@ -2505,7 +2519,7 @@ let eddDate = null;
 let currentWeek = 0;
 let currentDay = 0;
 let dateType = 'lmp';
-let viewedTimelineWeek = null;
+let viewedHomeWeek = null;
 let weightRecords = JSON.parse(localStorage.getItem('pregnancy_weights') || '[]');
 let checkedItems = JSON.parse(localStorage.getItem('pregnancy_checks') || '{}');
 
@@ -2614,10 +2628,9 @@ function updateUI() {
   // Checkup
   renderCheckup(displayWeek, data);
 
-  // Timeline
-  viewedTimelineWeek = displayWeek;
-  renderTimelineNav();
-  renderTimelineContent(displayWeek);
+  // Home week nav
+  viewedHomeWeek = displayWeek;
+  renderHomeContent(viewedHomeWeek);
 
   // Weight
   renderWeightLog();
@@ -2731,77 +2744,49 @@ function toggleCheck(key, checked) {
   saveToFirebase();
 }
 
-function renderTimelineNav() {
-  const nav = document.getElementById('timelineNav');
-  // Group by trimester
-  const groups = [
-    { label: '孕早期', start: 4, end: 12 },
-    { label: '孕中期', start: 13, end: 27 },
-    { label: '孕晚期', start: 28, end: 40 },
-  ];
-
-  nav.innerHTML = groups.map(g => {
-    return `<button class="timeline-btn" onclick="scrollTimeline(${g.start}, this)">${g.label} (${g.start}-${g.end}周)</button>`;
-  }).join('');
-}
-
-function scrollTimeline(startWeek, btn) {
-  document.querySelectorAll('.timeline-btn').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  viewedTimelineWeek = startWeek;
-  renderTimelineContent(startWeek);
-}
-
-function renderTimelineContent(week) {
-  const title = document.getElementById('timelineTitle');
-  const content = document.getElementById('timelineContent');
+function renderHomeContent(week) {
   const data = getWeekData(week);
 
-  title.textContent = `第 ${week} 周`;
+  // Update week nav label
+  document.getElementById('weekNavLabel').textContent = `第 ${week} 周`;
+  document.getElementById('prevWeekBtn').disabled = (week <= 4);
+  document.getElementById('nextWeekBtn').disabled = (week >= 40);
 
-  let html = `
-    <div class="dev-card">
-      <div class="dev-emoji">${data.emoji}</div>
-      <div class="dev-content">
-        <h4>宝宝大约有${data.size}那么大</h4>
-        <p>${data.dev}</p>
-      </div>
-    </div>
-  `;
+  const backBtn = document.getElementById('backCurrentBtn');
+  const displayWeek = Math.min(Math.max(currentWeek, 4), 40);
+  backBtn.style.display = (week !== displayWeek) ? 'inline-block' : 'none';
 
-  if (data.tips) {
-    html += '<div style="margin-top:16px;font-size:14px;font-weight:600;color:var(--text-secondary);margin-bottom:10px;">温馨提示</div>';
-    html += data.tips.map(tip => `
-      <div class="tip-card tip-${tip.type}">
-        <span class="tip-icon">${tip.icon}</span>
-        <div class="tip-text">${tip.text}</div>
-      </div>
-    `).join('');
+  // Update section titles
+  const devTitle = document.querySelector('#pageHome .section:nth-child(3) .section-title');
+  if (devTitle) devTitle.innerHTML = '<span class="icon">👶</span> 宝宝第 ' + week + ' 周发育';
+  const tipsTitle = document.querySelector('#pageHome .section:nth-child(5) .section-title');
+  if (tipsTitle) tipsTitle.innerHTML = '<span class="icon">💡</span> 第 ' + week + ' 周温馨提示';
+
+  // Render dev content
+  renderDevContent(week, data);
+
+  // Render tips
+  renderTips(data);
+
+  // Update warning
+  if (data.warning) {
+    document.getElementById('warningBanner').style.display = 'flex';
+    document.getElementById('warningText').textContent = data.warning;
+  } else {
+    document.getElementById('warningBanner').style.display = 'none';
   }
-
-  // Nav between weeks
-  html += `
-    <div style="display:flex;justify-content:space-between;margin-top:20px;padding-top:16px;border-top:1px solid var(--pink-100);">
-      <button onclick="changeTimelineWeek(-1)" style="padding:8px 16px;border:2px solid var(--pink-100);background:var(--white);border-radius:20px;font-size:13px;cursor:pointer;font-family:inherit;color:var(--text-secondary);${week <= 4 ? 'opacity:0.3;pointer-events:none;' : ''}">← 上一周</button>
-      <button onclick="jumpToCurrent()" style="padding:8px 16px;border:2px solid var(--pink-200);background:var(--pink-light);border-radius:20px;font-size:13px;cursor:pointer;font-family:inherit;color:var(--pink-500);">回到当前周</button>
-      <button onclick="changeTimelineWeek(1)" style="padding:8px 16px;border:2px solid var(--pink-100);background:var(--white);border-radius:20px;font-size:13px;cursor:pointer;font-family:inherit;color:var(--text-secondary);${week >= 40 ? 'opacity:0.3;pointer-events:none;' : ''}">下一周 →</button>
-    </div>
-  `;
-
-  content.innerHTML = html;
 }
 
-function changeTimelineWeek(delta) {
-  viewedTimelineWeek = Math.min(Math.max(viewedTimelineWeek + delta, 4), 40);
-  // Find the closest week with data
-  while (!WEEK_DATA[viewedTimelineWeek] && viewedTimelineWeek > 4 && delta > 0) viewedTimelineWeek++;
-  while (!WEEK_DATA[viewedTimelineWeek] && viewedTimelineWeek < 40 && delta < 0) viewedTimelineWeek--;
-  renderTimelineContent(viewedTimelineWeek);
+function changeHomeWeek(delta) {
+  viewedHomeWeek = Math.min(Math.max(viewedHomeWeek + delta, 4), 40);
+  while (!WEEK_DATA[viewedHomeWeek] && viewedHomeWeek > 4 && delta > 0) viewedHomeWeek++;
+  while (!WEEK_DATA[viewedHomeWeek] && viewedHomeWeek < 40 && delta < 0) viewedHomeWeek--;
+  renderHomeContent(viewedHomeWeek);
 }
 
-function jumpToCurrent() {
-  viewedTimelineWeek = Math.min(Math.max(currentWeek, 4), 40);
-  renderTimelineContent(viewedTimelineWeek);
+function jumpHomeCurrent() {
+  viewedHomeWeek = Math.min(Math.max(currentWeek, 4), 40);
+  renderHomeContent(viewedHomeWeek);
 }
 
 // ========== Recipe Data ==========
