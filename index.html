@@ -1005,6 +1005,85 @@
   }
   .sync-leave-btn:hover { color: var(--pink-600); }
 
+  .room-list {
+    margin: 10px 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .room-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 12px;
+    border-radius: var(--radius-sm);
+    background: var(--white);
+    border: 1px solid var(--pink-100);
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .room-item:hover { border-color: var(--pink-300); }
+  .room-item.room-active {
+    border-color: var(--pink-400);
+    background: #FFF0F5;
+  }
+
+  .room-item-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .room-item-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+
+  .room-item-code {
+    font-size: 11px;
+    font-family: monospace;
+    letter-spacing: 2px;
+    color: var(--text-light);
+  }
+
+  .room-item-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .room-active-dot {
+    color: #3D9E6A;
+    font-size: 8px;
+  }
+
+  .room-copy-btn {
+    background: var(--pink-400);
+    color: #fff;
+    border: none;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 11px;
+    cursor: pointer;
+    font-family: inherit;
+  }
+
+  .room-leave-btn {
+    background: none;
+    color: var(--text-light);
+    border: none;
+    font-size: 11px;
+    text-decoration: underline;
+    cursor: pointer;
+    padding: 4px 6px;
+    font-family: inherit;
+  }
+
+  .room-leave-btn:hover { color: #E74C3C; }
+
   #syncBadge {
     font-size: 11px;
     margin-left: auto;
@@ -1223,9 +1302,19 @@ const firebaseConfig = {
 // Firebase state
 let firebaseApp = null;
 let firebaseDb = null;
-let roomCode = localStorage.getItem('pregnancy_room') || null;
+let myRooms = JSON.parse(localStorage.getItem('pregnancy_rooms') || '[]'); // [{code, name, role:'owner'|'guest'}]
+let currentRoomCode = localStorage.getItem('pregnancy_current_room') || null;
 let syncListener = null;
 let isOnline = false;
+
+function getCurrentRoom() {
+  return myRooms.find(r => r.code === currentRoomCode) || null;
+}
+
+function saveRooms() {
+  localStorage.setItem('pregnancy_rooms', JSON.stringify(myRooms));
+  localStorage.setItem('pregnancy_current_room', currentRoomCode || '');
+}
 
 function initFirebase() {
   try {
@@ -1254,12 +1343,16 @@ async function createRoom() {
     alert('Firebase 未配置，请先完成 Firebase 设置');
     return;
   }
-  roomCode = generateRoomCode();
-  localStorage.setItem('pregnancy_room', roomCode);
+  const name = prompt('给房间起个名字，方便区分（如"我自己"、"闺蜜小美"）：');
+  if (!name || !name.trim()) return;
+  const code = generateRoomCode();
+  myRooms.push({ code, name: name.trim(), role: 'owner' });
+  currentRoomCode = code;
+  saveRooms();
   await saveToFirebase();
   startListening();
   updateSyncUI();
-  showSyncToast('家庭房间已创建！');
+  showSyncToast('房间「' + name.trim() + '」已创建！');
 }
 
 async function joinRoom(code) {
@@ -1272,11 +1365,19 @@ async function joinRoom(code) {
     alert('房间码应为6位字符');
     return;
   }
-  roomCode = cleanCode;
-  localStorage.setItem('pregnancy_room', roomCode);
+  if (myRooms.find(r => r.code === cleanCode)) {
+    alert('你已经加入过这个房间了');
+    return;
+  }
+  const name = prompt('给这个房间起个名字（如"闺蜜小美"）：');
+  if (!name || !name.trim()) return;
 
   try {
-    const snap = await firebaseDb.ref('rooms/' + roomCode + '/data').once('value');
+    const snap = await firebaseDb.ref('rooms/' + cleanCode + '/data').once('value');
+    myRooms.push({ code: cleanCode, name: name.trim(), role: 'guest' });
+    currentRoomCode = cleanCode;
+    saveRooms();
+
     if (snap.exists()) {
       const data = snap.val();
       if (data.lmpDate) {
@@ -1297,7 +1398,7 @@ async function joinRoom(code) {
       document.getElementById('mainApp').classList.add('active');
       updateUI();
       startListening();
-      showSyncToast('已加入家庭房间！');
+      showSyncToast('已加入房间「' + name.trim() + '」！');
     } else {
       startListening();
       showSyncToast('已加入，等待数据同步...');
@@ -1308,12 +1409,101 @@ async function joinRoom(code) {
   }
 }
 
-function startListening() {
-  if (!firebaseDb || !roomCode) return;
-  if (syncListener) {
-    firebaseDb.ref('rooms/' + roomCode + '/data').off('value', syncListener);
+async function switchRoom(code) {
+  if (code === currentRoomCode) return;
+  // Save current room data before switching
+  await saveToFirebase();
+  // Stop listening
+  if (syncListener && firebaseDb && currentRoomCode) {
+    firebaseDb.ref('rooms/' + currentRoomCode + '/data').off('value', syncListener);
+    syncListener = null;
   }
-  syncListener = firebaseDb.ref('rooms/' + roomCode + '/data').on('value', (snap) => {
+  currentRoomCode = code;
+  saveRooms();
+
+  // Load target room data
+  try {
+    const snap = await firebaseDb.ref('rooms/' + code + '/data').once('value');
+    if (snap.exists()) {
+      const data = snap.val();
+      if (data.lmpDate) {
+        lmpDate = new Date(data.lmpDate);
+        eddDate = data.eddDate ? new Date(data.eddDate) : getEDD(lmpDate);
+        localStorage.setItem('pregnancy_lmp', lmpDate.toISOString());
+        localStorage.setItem('pregnancy_edd', eddDate.toISOString());
+      }
+      if (data.weightRecords) {
+        weightRecords = data.weightRecords;
+        localStorage.setItem('pregnancy_weights', JSON.stringify(weightRecords));
+      }
+      if (data.checkedItems) {
+        checkedItems = data.checkedItems;
+        localStorage.setItem('pregnancy_checks', JSON.stringify(checkedItems));
+      }
+    }
+  } catch (e) {
+    console.warn('Load room data failed:', e);
+  }
+
+  if (lmpDate && document.getElementById('mainApp').classList.contains('active')) {
+    updateUI();
+  }
+  startListening();
+  updateSyncUI();
+  const room = getCurrentRoom();
+  if (room) showSyncToast('已切换到「' + room.name + '」');
+}
+
+async function leaveRoom(code) {
+  const room = myRooms.find(r => r.code === code);
+  if (!room) return;
+  const confirmLeave = confirm('确定退出房间「' + room.name + '」吗？（不会删除云端数据）');
+  if (!confirmLeave) return;
+
+  if (syncListener && firebaseDb && code === currentRoomCode) {
+    firebaseDb.ref('rooms/' + code + '/data').off('value', syncListener);
+    syncListener = null;
+  }
+  myRooms = myRooms.filter(r => r.code !== code);
+  if (currentRoomCode === code) {
+    currentRoomCode = myRooms.length > 0 ? myRooms[0].code : null;
+    if (currentRoomCode) {
+      // Load data of the new current room
+      try {
+        const snap = await firebaseDb.ref('rooms/' + currentRoomCode + '/data').once('value');
+        if (snap.exists()) {
+          const data = snap.val();
+          if (data.lmpDate) {
+            lmpDate = new Date(data.lmpDate);
+            eddDate = data.eddDate ? new Date(data.eddDate) : getEDD(lmpDate);
+            localStorage.setItem('pregnancy_lmp', lmpDate.toISOString());
+            localStorage.setItem('pregnancy_edd', eddDate.toISOString());
+          }
+          if (data.weightRecords) {
+            weightRecords = data.weightRecords;
+            localStorage.setItem('pregnancy_weights', JSON.stringify(weightRecords));
+          }
+          if (data.checkedItems) {
+            checkedItems = data.checkedItems;
+            localStorage.setItem('pregnancy_checks', JSON.stringify(checkedItems));
+          }
+        }
+      } catch (e) {}
+      startListening();
+      updateUI();
+    }
+  }
+  saveRooms();
+  updateSyncUI();
+  showSyncToast('已退出房间「' + room.name + '」');
+}
+
+function startListening() {
+  if (!firebaseDb || !currentRoomCode) return;
+  if (syncListener) {
+    firebaseDb.ref('rooms/' + currentRoomCode + '/data').off('value', syncListener);
+  }
+  syncListener = firebaseDb.ref('rooms/' + currentRoomCode + '/data').on('value', (snap) => {
     if (!snap.exists()) return;
     const data = snap.val();
 
@@ -1345,9 +1535,9 @@ function startListening() {
 }
 
 async function saveToFirebase() {
-  if (!firebaseDb || !roomCode) return;
+  if (!firebaseDb || !currentRoomCode) return;
   try {
-    await firebaseDb.ref('rooms/' + roomCode + '/data').update({
+    await firebaseDb.ref('rooms/' + currentRoomCode + '/data').update({
       lmpDate: lmpDate ? lmpDate.toISOString() : null,
       eddDate: eddDate ? eddDate.toISOString() : null,
       weightRecords: weightRecords,
@@ -1359,38 +1549,30 @@ async function saveToFirebase() {
   }
 }
 
-function leaveRoom() {
-  if (syncListener && firebaseDb && roomCode) {
-    firebaseDb.ref('rooms/' + roomCode + '/data').off('value', syncListener);
-    syncListener = null;
-  }
-  roomCode = null;
-  localStorage.removeItem('pregnancy_room');
-  updateSyncUI();
-  showSyncToast('已退出家庭房间');
-}
-
-function copyRoomCode() {
-  if (navigator.clipboard && roomCode) {
-    navigator.clipboard.writeText(roomCode).then(() => showSyncToast('房间码已复制！'));
-  } else if (roomCode) {
+function copyRoomCode(code) {
+  const targetCode = code || currentRoomCode;
+  if (!targetCode) return;
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(targetCode).then(() => showSyncToast('房间码已复制：' + targetCode));
+  } else {
     const ta = document.createElement('textarea');
-    ta.value = roomCode;
+    ta.value = targetCode;
     document.body.appendChild(ta);
     ta.select();
     document.execCommand('copy');
     document.body.removeChild(ta);
-    showSyncToast('房间码已复制！');
+    showSyncToast('房间码已复制：' + targetCode);
   }
 }
 
 function updateSyncUI() {
   const badge = document.getElementById('syncBadge');
+  const room = getCurrentRoom();
   if (badge) {
-    if (!roomCode) {
+    if (!currentRoomCode || !room) {
       badge.innerHTML = '<span class="sync-off">☁️ 未同步</span>';
     } else if (isOnline) {
-      badge.innerHTML = '<span class="sync-on" onclick="copyRoomCode()" title="点击复制房间码">☁️ 已同步 · ' + roomCode + '</span>';
+      badge.innerHTML = '<span class="sync-on" onclick="copyRoomCode()" title="点击复制房间码">☁️ ' + room.name + '</span>';
     } else {
       badge.innerHTML = '<span class="sync-wait">⏳ 连接中...</span>';
     }
@@ -1419,11 +1601,37 @@ function renderSyncSection() {
     container.innerHTML = '<div class="sync-card"><div class="sync-title">☁️ 数据同步</div><p style="font-size:13px;color:var(--text-secondary);margin:8px 0;">配置 Firebase 后可与家人实时同步数据</p></div>';
     return;
   }
-  if (roomCode) {
-    container.innerHTML = '<div class="sync-card sync-active"><div class="sync-title">☁️ 家庭房间</div><div class="sync-room-info"><span class="sync-code" onclick="copyRoomCode()" title="点击复制">' + roomCode + '</span><button class="sync-btn sync-copy-btn" onclick="copyRoomCode()">复制房间码</button></div><p style="font-size:12px;color:var(--text-light);margin:6px 0;">把房间码发给老公，他打开同一链接输入即可同步</p><button class="sync-btn sync-leave-btn" onclick="leaveRoom()">退出房间</button></div>';
+
+  let html = '<div class="sync-card"><div class="sync-title">☁️ 我的房间</div>';
+
+  if (myRooms.length === 0) {
+    html += '<p style="font-size:13px;color:var(--text-secondary);margin:8px 0;">创建或加入房间，与家人/好友共享孕期数据</p>';
   } else {
-    container.innerHTML = '<div class="sync-card"><div class="sync-title">☁️ 数据同步</div><p style="font-size:13px;color:var(--text-secondary);margin:8px 0;">创建家庭房间，与老公实时共享孕期数据</p><div style="display:flex;gap:8px;flex-wrap:wrap;"><button class="sync-btn sync-create-btn" onclick="createRoom()">创建家庭房间</button><button class="sync-btn sync-join-btn" onclick="showJoinDialog()">加入家庭房间</button></div></div>';
+    html += '<div class="room-list">';
+    myRooms.forEach(room => {
+      const isActive = room.code === currentRoomCode;
+      html += '<div class="room-item' + (isActive ? ' room-active' : '') + '" onclick="switchRoom(\'' + room.code + '\')">';
+      html += '<div class="room-item-info">';
+      html += '<span class="room-item-name">' + room.name + '</span>';
+      html += '<span class="room-item-code">' + room.code + '</span>';
+      html += '</div>';
+      html += '<div class="room-item-actions">';
+      if (isActive) {
+        html += '<span class="room-active-dot">●</span>';
+        html += '<button class="room-copy-btn" onclick="event.stopPropagation();copyRoomCode(\'' + room.code + '\')">复制</button>';
+      }
+      html += '<button class="room-leave-btn" onclick="event.stopPropagation();leaveRoom(\'' + room.code + '\')">退出</button>';
+      html += '</div></div>';
+    });
+    html += '</div>';
   }
+
+  html += '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;">';
+  html += '<button class="sync-btn sync-create-btn" onclick="createRoom()">+ 创建房间</button>';
+  html += '<button class="sync-btn sync-join-btn" onclick="showJoinDialog()">+ 加入房间</button>';
+  html += '</div></div>';
+
+  container.innerHTML = html;
 }
 
 function showJoinDialog() {
@@ -1433,6 +1641,10 @@ function showJoinDialog() {
 
 // Init Firebase
 initFirebase();
+// Auto-reconnect to last room
+if (currentRoomCode && firebaseDb) {
+  startListening();
+}
 </script>
 <script>
 // ========== Data ==========
