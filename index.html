@@ -1947,25 +1947,29 @@ function handleImageUpload(checkupKey) {
       showSyncToast('正在压缩图片...');
       const base64 = await compressImage(file, 1200, 0.7);
 
-      // Re-read from localStorage in case Firebase listener overwrote it during await
-      checkedItems = JSON.parse(localStorage.getItem('pregnancy_checks') || '{}');
-
-      // Save to checkedItems as Base64
-      if (!checkedItems[checkupKey] || typeof checkedItems[checkupKey] !== 'object') {
-        checkedItems[checkupKey] = { checked: isChecked(checkupKey), images: [] };
-      }
-      checkedItems[checkupKey].images.push({
+      // Directly read, modify, write localStorage (no global variable dependency)
+      const raw = localStorage.getItem('pregnancy_checks') || '{}';
+      const items = JSON.parse(raw);
+      const wasChecked = (items[checkupKey] === true || (items[checkupKey] && items[checkupKey].checked === true));
+      items[checkupKey] = {
+        checked: wasChecked,
+        images: Array.isArray(items[checkupKey] && items[checkupKey].images) ? items[checkupKey].images : []
+      };
+      items[checkupKey].images.push({
         data: base64,
         uploadedAt: Date.now()
       });
-      localStorage.setItem('pregnancy_checks', JSON.stringify(checkedItems));
+      localStorage.setItem('pregnancy_checks', JSON.stringify(items));
+
+      // Sync global variable so saveToFirebase sends correct data
+      checkedItems = items;
 
       showSyncToast('正在同步到云端...');
       await saveToFirebase();
 
       // Force re-render checkup page
       renderCheckup(Math.min(Math.max(currentWeek, 4), 40), getWeekData(Math.min(Math.max(currentWeek, 4), 40)));
-      showSyncToast('图片上传成功！共 ' + checkedItems[checkupKey].images.length + ' 张');
+      showSyncToast('图片上传成功！共 ' + items[checkupKey].images.length + ' 张');
     } catch (err) {
       console.error('Upload failed:', err);
       alert('上传失败：' + err.message);
