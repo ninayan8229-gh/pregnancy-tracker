@@ -1087,6 +1087,18 @@
 
   .room-leave-btn:hover { color: #E74C3C; }
 
+  .room-rename-btn {
+    background: none;
+    color: var(--text-light);
+    border: none;
+    font-size: 11px;
+    text-decoration: underline;
+    cursor: pointer;
+    padding: 4px 6px;
+    font-family: inherit;
+  }
+  .room-rename-btn:hover { color: var(--pink-500); }
+
   /* Checkup image styles */
   .checklist-item {
     display: flex;
@@ -1843,6 +1855,7 @@ function renderSyncSection() {
         html += '<span class="room-active-dot">●</span>';
         html += '<button class="room-copy-btn" onclick="event.stopPropagation();copyRoomCode(\'' + room.code + '\')">复制</button>';
       }
+      html += '<button class="room-rename-btn" onclick="event.stopPropagation();renameRoom(\'' + room.code + '\')">改名</button>';
       html += '<button class="room-leave-btn" onclick="event.stopPropagation();leaveRoom(\'' + room.code + '\')">退出</button>';
       html += '</div></div>';
     });
@@ -1867,6 +1880,20 @@ function renderSyncSection() {
 function showJoinDialog() {
   const code = prompt('请输入6位房间码：');
   if (code) joinRoom(code);
+}
+
+async function renameRoom(code) {
+  const room = myRooms.find(r => r.code === code);
+  if (!room) return;
+  const newName = prompt('修改房间名：', room.name || '');
+  if (!newName || !newName.trim()) return;
+  room.name = newName.trim();
+  saveRooms();
+  if (firebaseDb) {
+    await firebaseDb.ref('rooms/' + code + '/meta/roomName').set(newName.trim());
+  }
+  updateSyncUI();
+  showSyncToast('房间名已修改为「' + newName.trim() + '」');
 }
 
 function resetAllData() {
