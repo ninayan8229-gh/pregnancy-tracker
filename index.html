@@ -1946,7 +1946,9 @@ function handleImageUpload(checkupKey) {
     try {
       showSyncToast('正在压缩图片...');
       const base64 = await compressImage(file, 1200, 0.7);
-      console.log('[Upload] compress done, base64 length:', base64.length);
+
+      // Re-read from localStorage in case Firebase listener overwrote it during await
+      checkedItems = JSON.parse(localStorage.getItem('pregnancy_checks') || '{}');
 
       // Save to checkedItems as Base64
       if (!checkedItems[checkupKey] || typeof checkedItems[checkupKey] !== 'object') {
@@ -1956,23 +1958,14 @@ function handleImageUpload(checkupKey) {
         data: base64,
         uploadedAt: Date.now()
       });
-      console.log('[Upload] saved to checkedItems, images count:', checkedItems[checkupKey].images.length);
       localStorage.setItem('pregnancy_checks', JSON.stringify(checkedItems));
-      console.log('[Upload] saved to localStorage');
 
       showSyncToast('正在同步到云端...');
       await saveToFirebase();
-      console.log('[Upload] saved to Firebase');
 
       // Force re-render checkup page
       renderCheckup(Math.min(Math.max(currentWeek, 4), 40), getWeekData(Math.min(Math.max(currentWeek, 4), 40)));
       showSyncToast('图片上传成功！共 ' + checkedItems[checkupKey].images.length + ' 张');
-
-      // Verify it's actually there
-      setTimeout(() => {
-        const verify = getItemImages(checkupKey);
-        console.log('[Upload] verify images count:', verify.length);
-      }, 100);
     } catch (err) {
       console.error('Upload failed:', err);
       alert('上传失败：' + err.message);
@@ -3008,4 +3001,3 @@ init();
 
 </body>
 </html>
-
