@@ -1889,6 +1889,16 @@ function closePreview() {
   if (overlay) overlay.remove();
 }
 
+// Event delegation for checkup thumbnails (avoids embedding base64 in onclick)
+document.addEventListener('click', function(e) {
+  if (e.target.classList.contains('checkup-thumb')) {
+    const checkupKey = e.target.getAttribute('data-checkup-key');
+    const imgIndex = parseInt(e.target.getAttribute('data-img-index'), 10);
+    const imgSrc = e.target.src;
+    previewImage(imgSrc, checkupKey, imgIndex);
+  }
+});
+
 // Init Firebase
 initFirebase();
 // Auto-reconnect to last room
@@ -2449,7 +2459,7 @@ function renderCheckup(week, data) {
     if (images.length > 0) {
       imagesHtml = '<div class="checkup-images">';
       images.forEach((img, idx) => {
-        imagesHtml += `<img src="${img.data}" class="checkup-thumb" onclick="previewImage('${img.data}', '${item.key}', ${idx})" alt="产检图片">`;
+        imagesHtml += `<img src="${img.data}" class="checkup-thumb" data-checkup-key="${item.key}" data-img-index="${idx}" alt="产检图片">`;
       });
       imagesHtml += '</div>';
     }
