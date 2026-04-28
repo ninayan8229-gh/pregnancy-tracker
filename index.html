@@ -1135,8 +1135,6 @@
     </div>
 
     <button class="start-btn" onclick="startApp()">开始记录 ✨</button>
-
-    <div id="syncSection"></div>
   </div>
 </div>
 
@@ -1245,6 +1243,14 @@
     </div>
   </div>
 
+  <!-- Page: Settings -->
+  <div class="page-view" id="pageSettings">
+    <div class="section animate-in">
+      <div class="section-title"><span class="icon">⚙️</span> 设置</div>
+      <div id="syncSection"></div>
+    </div>
+  </div>
+
   <!-- Bottom Navigation -->
   <div class="bottom-nav">
     <button class="nav-item active" onclick="switchPage('Home', this)">
@@ -1266,6 +1272,10 @@
     <button class="nav-item" onclick="switchPage('Weight', this)">
       <span class="nav-icon">⚖️</span>
       <span class="nav-label">体重</span>
+    </button>
+    <button class="nav-item" onclick="switchPage('Settings', this)">
+      <span class="nav-icon">⚙️</span>
+      <span class="nav-label">设置</span>
     </button>
   </div>
 </div>
